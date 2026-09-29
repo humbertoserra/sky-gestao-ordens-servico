@@ -1,0 +1,13 @@
+/__history
+bin/config.ini
+/bkp
+/dcu
+/doc
+/src/Controller/__history
+/src/Model/__history
+/src/Model/Connection/__history
+/src/Model/DAO/__history
+/src/Model/Entity/__history
+/src/Model/Service/__history
+/src/Service/__history
+/src/View/__history
