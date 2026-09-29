@@ -3,6 +3,7 @@ bin/config.ini
 /bkp
 /dcu
 /doc
+/.agents
 /src/Controller/__history
 /src/Model/__history
 /src/Model/Connection/__history
@@ -11,3 +12,6 @@ bin/config.ini
 /src/Model/Service/__history
 /src/Service/__history
 /src/View/__history
+AGENTS.md
+AGENTS.md
+AGENTS.md
