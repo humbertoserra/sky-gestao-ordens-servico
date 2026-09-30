@@ -101,6 +101,7 @@ type
     function QuantidadeItens: Integer;
     procedure RecalcularTotal;
     procedure Salvar(const ADados: TDadosOrdemServico);
+    procedure Excluir;
     procedure Descartar;
     procedure AtualizarClientes;
     procedure AtualizarIndicadores;

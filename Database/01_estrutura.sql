@@ -24,6 +24,9 @@
 
               Clientes, ordens e itens utilizam o campo ATIVO para exclusão
               lógica, preservando registros e relacionamentos para consulta.
+
+              O cliente ID 1 e reservado: AO CONSUMIDOR.
+              A aplicação impede sua alteração e inativação.  
   ------------------------------------------------------------------------------
   CAMADA    : Banco de Dados / Estrutura Inicial
   ------------------------------------------------------------------------------
@@ -129,13 +132,18 @@ END^
 
 SET TERM ; ^
 
-
 CREATE INDEX IDX_OS_STATUS
 ON ORDEM_SERVICO (STATUS);
 
 CREATE INDEX IDX_OS_DATA_ABERTURA
 ON ORDEM_SERVICO (DATA_ABERTURA);
 
+-- Cadastro inicial do cliente reservado.
+INSERT INTO CLIENTE (ID, NOME, ATIVO)
+VALUES (1, 'AO CONSUMIDOR', 1);
+
+-- O próximo ID gerado para cliente será 2.
+SET GENERATOR GEN_CLIENTE_ID TO 1;
 
 COMMIT;
 

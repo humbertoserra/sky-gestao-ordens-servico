@@ -156,6 +156,8 @@
         <DCCReference Include="src\Controller\Sky.Controller.Factory.pas"/>
         <DCCReference Include="src\Service\Sky.Service.Utils.pas"/>
         <DCCReference Include="src\Controller\Sky.Controller.OrdemServico.pas"/>
+        <DCCReference Include="src\Model\Connection\Sky.Model.Connection.MemTable.ADO.pas"/>
+        <DCCReference Include="src\Model\Connection\Sky.Model.Connection.MemTable.FireDAC.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

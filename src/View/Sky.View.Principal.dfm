@@ -68,6 +68,7 @@ object FrmPrincipal: TFrmPrincipal
           Width = 32
           Height = 15
           Caption = 'Status'
+          FocusControl = cbxFiltroStatus
         end
         object lblAte: TLabel
           Left = 102
@@ -189,14 +190,14 @@ object FrmPrincipal: TFrmPrincipal
       TabOrder = 2
       object lblOS: TLabel
         Left = 323
-        Top = 26
+        Top = 36
         Width = 35
         Height = 15
         Caption = 'OS N'#186' '
       end
       object lblNumeroOS: TLabel
         Left = 371
-        Top = 25
+        Top = 35
         Width = 42
         Height = 17
         Alignment = taRightJustify
@@ -209,22 +210,30 @@ object FrmPrincipal: TFrmPrincipal
         ParentFont = False
       end
       object lblStatus: TLabel
-        Left = 248
-        Top = 25
-        Width = 38
-        Height = 17
-        Alignment = taRightJustify
+        Left = 164
+        Top = 14
+        Width = 32
+        Height = 15
         Caption = 'Status'
+        FocusControl = cbxStatusOS
+      end
+      object lblSomenteConsulta: TLabel
+        Left = 22
+        Top = 35
+        Width = 95
+        Height = 15
+        Caption = 'Somente consulta'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -13
+        Font.Color = clGrayText
+        Font.Height = -12
         Font.Name = 'Segoe UI'
-        Font.Style = [fsBold]
+        Font.Style = []
         ParentFont = False
+        Visible = False
       end
       object groupClientes: TGroupBox
         Left = 11
-        Top = 50
+        Top = 62
         Width = 414
         Height = 66
         Padding.Left = 8
@@ -236,8 +245,9 @@ object FrmPrincipal: TFrmPrincipal
           Width = 37
           Height = 15
           Caption = 'Cliente'
+          FocusControl = cbxCliente
         end
-        object comboCliente: TComboBox
+        object cbxCliente: TComboBox
           Left = 12
           Top = 31
           Width = 299
@@ -256,7 +266,7 @@ object FrmPrincipal: TFrmPrincipal
       end
       object groupDatas: TGroupBox
         Left = 11
-        Top = 123
+        Top = 135
         Width = 414
         Height = 70
         Padding.Left = 8
@@ -297,7 +307,7 @@ object FrmPrincipal: TFrmPrincipal
       end
       object groupItemOrdem: TGroupBox
         Left = 12
-        Top = 308
+        Top = 320
         Width = 414
         Height = 172
         Caption = '  Itens da Ordem  '
@@ -392,7 +402,7 @@ object FrmPrincipal: TFrmPrincipal
       end
       object groupProblema: TGroupBox
         Left = 11
-        Top = 192
+        Top = 204
         Width = 414
         Height = 110
         Caption = '  Problema Relatado  '
@@ -415,6 +425,13 @@ object FrmPrincipal: TFrmPrincipal
           Align = alClient
           TabOrder = 0
         end
+      end
+      object cbxStatusOS: TComboBox
+        Left = 164
+        Top = 32
+        Width = 151
+        Height = 23
+        TabOrder = 7
       end
     end
     object groupIndicadores: TGroupBox
@@ -602,13 +619,21 @@ object FrmPrincipal: TFrmPrincipal
     end
   end
   object MainMenu: TMainMenu
-    Left = 648
-    Top = 16
+    Left = 800
+    Top = 8
     object menuCadastro: TMenuItem
       Caption = '&Cadastro'
-      object menuClientes: TMenuItem
+      object itemMenuClientes: TMenuItem
         Caption = 'C&lientes'
-        OnClick = menuClientesClick
+        OnClick = itemMenuClientesClick
+      end
+    end
+    object menuOS: TMenuItem
+      Caption = '&Ordem de Servi'#231'o'
+      object itemMenuExcluirOS: TMenuItem
+        Caption = 'E&xcluir OS'
+        Enabled = False
+        OnClick = itemMenuExcluirOSClick
       end
     end
     object Relatrios1: TMenuItem

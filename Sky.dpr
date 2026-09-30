@@ -26,7 +26,9 @@ uses
   Sky.Controller.Clientes in 'src\Controller\Sky.Controller.Clientes.pas',
   Sky.Controller.Factory in 'src\Controller\Sky.Controller.Factory.pas',
   Sky.Service.Utils in 'src\Service\Sky.Service.Utils.pas',
-  Sky.Controller.OrdemServico in 'src\Controller\Sky.Controller.OrdemServico.pas';
+  Sky.Controller.OrdemServico in 'src\Controller\Sky.Controller.OrdemServico.pas',
+  Sky.Model.Connection.MemTable.ADO in 'src\Model\Connection\Sky.Model.Connection.MemTable.ADO.pas',
+  Sky.Model.Connection.MemTable.FireDAC in 'src\Model\Connection\Sky.Model.Connection.MemTable.FireDAC.pas';
 
 {$R *.res}
 

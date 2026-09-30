@@ -18,6 +18,7 @@ type
     TInterfacedObject, iControllerOrdemServico)
   private
     FConexao: iConexao;
+    FMemTableItens: iMemTable;
 
     FDAOListagem: iDAOOrdemServico;
     FDAOCadastro: iDAOOrdemServico;
@@ -25,23 +26,28 @@ type
     FDAOClientes: iDAOCliente;
 
     FOrdem: iOrdemServico;
-    FItens: TListaItensOS;
     FItensOriginais: TListaItensOS;
 
     FTotal: Currency;
     FIndicadores: TIndicadoresOrdemServico;
 
+    FAtualizandoItens: Integer;
+    FSubtotalAntesEdicao: Currency;
+    FIDItemAntesEdicao: Integer;
+
+    procedure ItensBeforeInsert(DataSet: TDataSet);
+    procedure ItensBeforeEdit(DataSet: TDataSet);
+    procedure ItensNewRecord(DataSet: TDataSet);
+    procedure ItensBeforePost(DataSet: TDataSet);
+    procedure ItensBeforeDelete(DataSet: TDataSet);
+    procedure ItensAposAlteracao(DataSet: TDataSet);
     procedure VerificarConexao;
     procedure ExigirManutencao;
     procedure ValidarIndice(const AIndice: Integer);
 
     function ConsultaDAO(const ADAO: iDAO): TDataSet;
-
-    function StatusTexto(
-      AStatus: TStatusOrdemServico): string;
-
-    function StatusTipo(
-      const AStatus: string): TStatusOrdemServico;
+    function StatusTexto(AStatus: TStatusOrdemServico): string;
+    function StatusTipo(const AStatus: string): TStatusOrdemServico;
 
     procedure AdicionarFiltro(
       var AFiltros: TFiltros;
@@ -49,33 +55,21 @@ type
       AOperador: TOperadorFiltro;
       const AValor: Variant);
 
-    function LerOrdem(
-      AConsulta: TDataSet): iOrdemServico;
-
-    function LerItens(
-      const AOrdemID: Integer): TListaItensOS;
-
-    function CopiarItem(
-      const AItem: iItemOrdem): iItemOrdem;
-
-    function CopiarItens(
-      const AItens: TListaItensOS): TListaItensOS;
-
-    function ArredondarValor(
-      const AValor: Currency): Currency;
+    function LerOrdem(AConsulta: TDataSet): iOrdemServico;
+    function LerItens(const AOrdemID: Integer): TListaItensOS;
+    function CopiarItem(const AItem: iItemOrdem): iItemOrdem;
+    function CopiarItens(const AItens: TListaItensOS): TListaItensOS;
+    function ArredondarValor(const AValor: Currency): Currency;
 
     function CalcularSubtotal(
       const AQuantidade: Double;
       const AValorUnitario: Currency): Currency;
 
-    function CalcularTotal(
-      const AItens: TListaItensOS): Currency;
+    function CalcularTotal(const AItens: TListaItensOS): Currency;
 
     procedure ValidarItem(const AItem: iItemOrdem);
 
-    function IndiceItem(
-      const AItens: TListaItensOS;
-      const AID: Integer): Integer;
+    function IndiceItem(const AItens: TListaItensOS; const AID: Integer): Integer;
 
     function ItensIguais(
       const APrimeiro: iItemOrdem;
@@ -89,13 +83,20 @@ type
 
     function PrepararOrdem(
       const ADados: TDadosOrdemServico): iOrdemServico;
+    procedure ExigirEdicao;
+    procedure CriarTabelaItens;
+    procedure PreencherTabelaItens(const AItens: TListaItensOS);
+    function LerItensMemoria: TListaItensOS;
+    procedure AplicarItensMemoria(const aItens: TListaItensOS);
+    function TotalEmEdicao: Currency;
   public
     constructor Create(
       const AConexao: iConexao;
       const ADAOListagem: iDAOOrdemServico;
       const ADAOCadastro: iDAOOrdemServico;
       const ADAOItens: iDAOItemOrdem;
-      const ADAOClientes: iDAOCliente);
+      const ADAOClientes: iDAOCliente;
+      const AMemTableItens: iMemTable);
 
     destructor Destroy; override;
 
@@ -104,10 +105,10 @@ type
       const ADAOListagem: iDAOOrdemServico;
       const ADAOCadastro: iDAOOrdemServico;
       const ADAOItens: iDAOItemOrdem;
-      const ADAOClientes: iDAOCliente): iControllerOrdemServico;
+      const ADAOClientes: iDAOCliente;
+      const AMemTableItens: iMemTable): iControllerOrdemServico;
 
-    procedure Pesquisar(
-      const AFiltro: TFiltroOrdemServico);
+    procedure Pesquisar(const AFiltro: TFiltroOrdemServico);
 
     procedure Novo;
     procedure Carregar(const AID: Integer);
@@ -115,13 +116,11 @@ type
     function Dados: TDadosOrdemServico;
     function PodeEditar: Boolean;
 
-    function PodeAlterarStatus(
-      ANovoStatus: TStatusOrdemServico): Boolean;
+    function PodeAlterarStatus(ANovoStatus: TStatusOrdemServico): Boolean;
 
     procedure NovoItem;
 
-    function DadosItem(
-      const AIndice: Integer): TDadosItemOrdem;
+    function DadosItem(const AIndice: Integer): TDadosItemOrdem;
 
     procedure AtualizarItem(
       const AIndice: Integer;
@@ -131,8 +130,8 @@ type
     function QuantidadeItens: Integer;
     procedure RecalcularTotal;
 
-    procedure Salvar(
-      const ADados: TDadosOrdemServico);
+    procedure Salvar(const ADados: TDadosOrdemServico);
+    procedure Excluir;
 
     procedure Descartar;
     procedure AtualizarClientes;
@@ -159,7 +158,8 @@ constructor TControllerOrdemServico.Create(
   const ADAOListagem: iDAOOrdemServico;
   const ADAOCadastro: iDAOOrdemServico;
   const ADAOItens: iDAOItemOrdem;
-  const ADAOClientes: iDAOCliente);
+  const ADAOClientes: iDAOCliente;
+  const AMemTableItens: iMemTable);
 begin
   inherited Create;
 
@@ -182,15 +182,67 @@ begin
     raise Exception.Create(
       'Listagem e cadastro devem utilizar DAOs distintos.');
 
+  if AMemTableItens = nil then
+    raise Exception.Create(
+      'Tabela em memoria dos itens nao informada.');
+
   FConexao := AConexao;
   FDAOListagem := ADAOListagem;
   FDAOCadastro := ADAOCadastro;
   FDAOItens := ADAOItens;
   FDAOClientes := ADAOClientes;
+  FMemTableItens := AMemTableItens;
+
+  CriarTabelaItens;
+end;
+
+procedure TControllerOrdemServico.CriarTabelaItens;
+begin
+  FMemTableItens
+    .DefinirCampo('ID', ftInteger, 0, True)
+    .DefinirCampo('ORDEM_ID', ftInteger, 0, True)
+    .DefinirCampo('DESCRICAO', ftString, 200, false)
+    .DefinirCampo('QUANTIDADE', ftFloat, 0, True)
+    .DefinirCampo('VALOR_UNITARIO', ftCurrency, 0, True)
+    .DefinirCampo('ATIVO', ftInteger, 0, True);
+
+  FMemTableItens.Criar;
+
+  with FMemTableItens.DataSet do
+    begin
+      BeforeInsert := ItensBeforeInsert;
+      BeforeEdit := ItensBeforeEdit;
+      OnNewRecord := ItensNewRecord;
+      BeforePost := ItensBeforePost;
+      BeforeDelete := ItensBeforeDelete;
+
+      AfterPost := ItensAposAlteracao;
+      AfterDelete := ItensAposAlteracao;
+      AfterCancel := ItensAposAlteracao;
+    end;
 end;
 
 destructor TControllerOrdemServico.Destroy;
+var
+  Consulta: TDataSet;
 begin
+  if FMemTableItens <> nil then
+  begin
+    Consulta := FMemTableItens.DataSet;
+
+    if Consulta <> nil then
+    begin
+      Consulta.BeforeInsert := nil;
+      Consulta.BeforeEdit := nil;
+      Consulta.OnNewRecord := nil;
+      Consulta.BeforePost := nil;
+      Consulta.BeforeDelete := nil;
+      Consulta.AfterPost := nil;
+      Consulta.AfterDelete := nil;
+      Consulta.AfterCancel := nil;
+    end;
+  end;
+
   inherited Destroy;
 end;
 
@@ -199,20 +251,32 @@ class function TControllerOrdemServico.New(
   const ADAOListagem: iDAOOrdemServico;
   const ADAOCadastro: iDAOOrdemServico;
   const ADAOItens: iDAOItemOrdem;
-  const ADAOClientes: iDAOCliente): iControllerOrdemServico;
+  const ADAOClientes: iDAOCliente;
+  const AMemTableItens: iMemTable): iControllerOrdemServico;
 begin
   Result := Self.Create(
     AConexao,
     ADAOListagem,
     ADAOCadastro,
     ADAOItens,
-    ADAOClientes);
+    ADAOClientes,
+    AMemTableItens);
 end;
 
 procedure TControllerOrdemServico.VerificarConexao;
 begin
   if not FConexao.Conectada then
     raise Exception.Create('Conexao fechada.');
+end;
+
+procedure TControllerOrdemServico.ExigirEdicao;
+begin
+  ExigirManutencao;
+
+  if not PodeEditar then
+    raise Exception.Create(
+      'Esta OS esta concluida, cancelada ou excluida ' +
+      'e permite apenas consulta.');
 end;
 
 procedure TControllerOrdemServico.ExigirManutencao;
@@ -227,7 +291,7 @@ procedure TControllerOrdemServico.ValidarIndice(
 begin
   ExigirManutencao;
 
-  if (AIndice < 0) or (AIndice >= Length(FItens)) then
+  if (AIndice < 0) or (AIndice >= QuantidadeItens) then
     raise Exception.Create('Indice de item invalido.');
 end;
 
@@ -279,6 +343,47 @@ begin
       'Status de OS desconhecido: %s.', [AStatus]);
 end;
 
+function TControllerOrdemServico.TotalEmEdicao: Currency;
+var
+  Consulta: TDataSet;
+  Subtotal: Currency;
+  TotalOutros: Currency;
+begin
+  Result := FTotal;
+
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  Consulta := FMemTableItens.DataSet;
+
+  if Consulta = nil then
+    Exit;
+
+  if not Consulta.Active then
+    Exit;
+
+  if not (Consulta.State in [dsEdit, dsInsert]) then
+    Exit;
+
+  // Uma linha incompleta nao deve bloquear a navegacao.
+  // Enquanto os numeros forem invalidos, conserva o total confirmado.
+  try
+    Subtotal := CalcularSubtotal(
+      Consulta.FieldByName('QUANTIDADE').AsFloat,
+      Consulta.FieldByName('VALOR_UNITARIO').AsCurrency);
+  except
+    on E: Exception do
+      Exit;
+  end;
+
+  TotalOutros := FTotal - FSubtotalAntesEdicao;
+
+  if TotalOutros > MAX_VALOR - Subtotal then
+    Exit;
+
+  Result := TotalOutros + Subtotal;
+end;
+
 procedure TControllerOrdemServico.AdicionarFiltro(
   var AFiltros: TFiltros;
   const ACampo: string;
@@ -304,6 +409,7 @@ begin
   VerificarConexao;
 
   SetLength(Filtros, 0);
+  AdicionarFiltro(Filtros, 'Ativo', ofIgual, 1);
   Nome := UpperCase(Trim(AFiltro.NomeCliente));
 
   if Nome <> '' then
@@ -435,6 +541,79 @@ begin
   end;
 end;
 
+function TControllerOrdemServico.LerItensMemoria: TListaItensOS;
+var
+  Consulta: TDataSet;
+  Item: iItemOrdem;
+  Posicao: TBookmark;
+  Indice: Integer;
+begin
+  SetLength(Result, 0);
+
+  Consulta := FMemTableItens.DataSet;
+
+  if Consulta = nil then
+    raise Exception.Create(
+      'Tabela em memoria dos itens indisponivel.');
+
+  if not Consulta.Active then
+    raise Exception.Create(
+      'Tabela em memoria dos itens fechada.');
+
+  if Consulta.State in [dsEdit, dsInsert] then
+    raise Exception.Create(
+      'Conclua ou cancele a edicao do item antes de continuar.');
+
+  if Consulta.IsEmpty then
+    Exit;
+
+  Consulta.DisableControls;
+  try
+    Posicao := Consulta.GetBookmark;
+    try
+      Consulta.First;
+
+      while not Consulta.Eof do
+      begin
+        Item := TEntidade.New.ItemOrdem;
+
+        Item.ID(
+          Consulta.FieldByName('ID').AsInteger);
+
+        Item.OrdemID(
+          Consulta.FieldByName('ORDEM_ID').AsInteger);
+
+        Item.Descricao(
+          Consulta.FieldByName('DESCRICAO').AsString);
+
+        Item.Quantidade(
+          Consulta.FieldByName('QUANTIDADE').AsFloat);
+
+        Item.ValorUnitario(
+          Consulta.FieldByName('VALOR_UNITARIO').AsCurrency);
+
+        Item.Ativo(
+          Consulta.FieldByName('ATIVO').AsInteger = 1);
+
+        Indice := Length(Result);
+        SetLength(Result, Indice + 1);
+        Result[Indice] := Item;
+
+        Consulta.Next;
+      end;
+    finally
+      try
+        if Consulta.BookmarkValid(Posicao) then
+          Consulta.GotoBookmark(Posicao);
+      finally
+        Consulta.FreeBookmark(Posicao);
+      end;
+    end;
+  finally
+    Consulta.EnableControls;
+  end;
+end;
+
 function TControllerOrdemServico.CopiarItem(
   const AItem: iItemOrdem): iItemOrdem;
 begin
@@ -486,7 +665,6 @@ var
   Ordem: iOrdemServico;
   Itens: TListaItensOS;
   Originais: TListaItensOS;
-  Total: Currency;
 begin
   VerificarConexao;
 
@@ -506,12 +684,11 @@ begin
 
   Itens := LerItens(AID);
   Originais := CopiarItens(Itens);
-  Total := CalcularTotal(Itens);
+
+  AplicarItensMemoria(Itens);
 
   FOrdem := Ordem;
-  FItens := Itens;
   FItensOriginais := Originais;
-  FTotal := Total;
 end;
 
 function TControllerOrdemServico.Dados: TDadosOrdemServico;
@@ -540,12 +717,18 @@ begin
   if Result.TemDataFechamento then
     Result.DataFechamento := FOrdem.DataFechamento;
 
-  Result.ValorTotal := FTotal;
+  Result.ValorTotal := TotalEmEdicao;
 end;
 
 function TControllerOrdemServico.PodeEditar: Boolean;
 begin
-  Result := FOrdem <> nil;
+  Result := False;
+
+  if FOrdem = nil then
+    Exit;
+
+  Result := FOrdem.Ativo and
+    not (StatusTipo(FOrdem.Status) in [soConcluida, soCancelada]);
 end;
 
 function TControllerOrdemServico.PodeAlterarStatus(
@@ -584,6 +767,37 @@ begin
     soConcluida, soCancelada:
       Result := False;
   end;
+end;
+
+procedure TControllerOrdemServico.AplicarItensMemoria(
+  const aItens: TListaItensOS);
+var
+  Anteriores: TListaItensOS;
+  Total: Currency;
+begin
+  Total := CalcularTotal(AItens);
+  Anteriores := LerItensMemoria;
+
+  try
+    PreencherTabelaItens(AItens);
+  except
+    on E: Exception do
+    begin
+      try
+        PreencherTabelaItens(Anteriores);
+      except
+        on ERestauracao: Exception do
+          raise Exception.CreateFmt(
+            'Falha ao atualizar os itens: %s. ' +
+            'Falha ao restaurar os dados anteriores: %s.',
+            [E.Message, ERestauracao.Message]);
+      end;
+
+      raise;
+    end;
+  end;
+
+  FTotal := Total;
 end;
 
 function TControllerOrdemServico.ArredondarValor(
@@ -692,35 +906,24 @@ begin
 end;
 
 procedure TControllerOrdemServico.NovoItem;
-var
-  Item: iItemOrdem;
-  Indice: Integer;
 begin
-  ExigirManutencao;
-
-  Item := TEntidade.New.ItemOrdem;
-
-  Item.ID(0);
-  Item.OrdemID(FOrdem.ID);
-  Item.Descricao('');
-  Item.Quantidade(1);
-  Item.ValorUnitario(0);
-  Item.Ativo(True);
-
-  Indice := Length(FItens);
-  SetLength(FItens, Indice + 1);
-  FItens[Indice] := Item;
+  ExigirEdicao;
+  FMemTableItens.DataSet.Append;
 end;
 
 function TControllerOrdemServico.DadosItem(
   const AIndice: Integer): TDadosItemOrdem;
+var
+  Itens: TListaItensOS;
 begin
   ValidarIndice(AIndice);
 
-  Result.ID := FItens[AIndice].ID;
-  Result.Descricao := FItens[AIndice].Descricao;
-  Result.Quantidade := FItens[AIndice].Quantidade;
-  Result.ValorUnitario := FItens[AIndice].ValorUnitario;
+  Itens := LerItensMemoria;
+
+  Result.ID := Itens[AIndice].ID;
+  Result.Descricao := Itens[AIndice].Descricao;
+  Result.Quantidade := Itens[AIndice].Quantidade;
+  Result.ValorUnitario := Itens[AIndice].ValorUnitario;
 end;
 
 procedure TControllerOrdemServico.AtualizarItem(
@@ -728,16 +931,18 @@ procedure TControllerOrdemServico.AtualizarItem(
   const ADados: TDadosItemOrdem);
 var
   Item: iItemOrdem;
-  Anterior: iItemOrdem;
-  Total: Currency;
+  Itens: TListaItensOS;
 begin
+  ExigirEdicao;
   ValidarIndice(AIndice);
 
-  if ADados.ID <> FItens[AIndice].ID then
+  Itens := LerItensMemoria;
+
+  if ADados.ID <> Itens[AIndice].ID then
     raise Exception.Create(
       'Os dados nao correspondem ao item selecionado.');
 
-  Item := CopiarItem(FItens[AIndice]);
+  Item := CopiarItem(Itens[AIndice]);
 
   Item.Descricao(Trim(ADados.Descricao));
   Item.Quantidade(ADados.Quantidade);
@@ -745,42 +950,104 @@ begin
 
   ValidarItem(Item);
 
-  Anterior := FItens[AIndice];
-  FItens[AIndice] := Item;
+  Itens[AIndice] := Item;
+  AplicarItensMemoria(Itens);
 
+  FMemTableItens.DataSet.MoveBy(AIndice);
+end;
+
+procedure TControllerOrdemServico.Excluir;
+begin
+  ExigirEdicao;
+  VerificarConexao;
+
+  if FOrdem.ID <= 0 then
+    raise Exception.Create(
+      'Esta OS ainda nao foi salva. ' +
+      'Utilize Descartar para limpar o preenchimento.');
+
+  if FConexao.EmTransacao then
+    raise Exception.Create(
+      'Existe uma transacao em andamento.');
+
+  FConexao.IniciarTransacao;
   try
-    Total := CalcularTotal(FItens);
+    ConferirEstadoPersistido;
+
+    FDAOCadastro.Excluir(FOrdem.ID);
+
+    FConexao.ConfirmarTransacao;
   except
-    FItens[AIndice] := Anterior;
-    raise;
+    on E: Exception do
+    begin
+      try
+        if FConexao.EmTransacao then
+          FConexao.DesfazerTransacao;
+      except
+        on ERollback: Exception do
+          raise Exception.CreateFmt(
+            'Falha ao excluir: %s. Falha ao desfazer: %s.',
+            [E.Message, ERollback.Message]);
+      end;
+
+      raise;
+    end;
   end;
 
-  FTotal := Total;
+  Descartar;
 end;
 
 procedure TControllerOrdemServico.ExcluirItem(
   const AIndice: Integer);
 var
+  Itens: TListaItensOS;
   I: Integer;
+  Posicao: Integer;
 begin
+  ExigirEdicao;
   ValidarIndice(AIndice);
 
-  for I := AIndice to High(FItens) - 1 do
-    FItens[I] := FItens[I + 1];
+  Itens := LerItensMemoria;
 
-  SetLength(FItens, Length(FItens) - 1);
+  for I := AIndice to High(Itens) - 1 do
+    Itens[I] := Itens[I + 1];
 
-  RecalcularTotal;
+  SetLength(Itens, Length(Itens) - 1);
+
+
+  AplicarItensMemoria(Itens);
+
+  if Length(Itens) > 0 then
+  begin
+    Posicao := AIndice;
+
+    if Posicao >= Length(Itens) then
+      Posicao := Length(Itens) - 1;
+
+    FMemTableItens.DataSet.MoveBy(Posicao);
+  end;
 end;
 
 function TControllerOrdemServico.QuantidadeItens: Integer;
+var
+  Consulta: TDataSet;
 begin
-  Result := Length(FItens);
+  Result := 0;
+
+  Consulta := FMemTableItens.DataSet;
+
+  if Consulta = nil then
+    Exit;
+
+  if not Consulta.Active then
+    Exit;
+
+  Result := Consulta.RecordCount;
 end;
 
 procedure TControllerOrdemServico.RecalcularTotal;
 begin
-  FTotal := CalcularTotal(FItens);
+  FTotal := CalcularTotal(LerItensMemoria);
 end;
 
 function TControllerOrdemServico.IndiceItem(
@@ -797,6 +1064,121 @@ begin
       Result := I;
       Exit;
     end;
+end;
+
+procedure TControllerOrdemServico.ItensBeforeInsert(
+  DataSet: TDataSet);
+begin
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  ExigirEdicao;
+  RecalcularTotal;
+
+  FSubtotalAntesEdicao := 0;
+  FIDItemAntesEdicao := 0;
+end;
+
+procedure TControllerOrdemServico.ItensBeforeEdit(
+  DataSet: TDataSet);
+begin
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  ExigirEdicao;
+  RecalcularTotal;
+
+  FIDItemAntesEdicao :=
+    DataSet.FieldByName('ID').AsInteger;
+
+  FSubtotalAntesEdicao := CalcularSubtotal(
+    DataSet.FieldByName('QUANTIDADE').AsFloat,
+    DataSet.FieldByName('VALOR_UNITARIO').AsCurrency);
+end;
+
+procedure TControllerOrdemServico.ItensNewRecord(
+  DataSet: TDataSet);
+begin
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  ExigirEdicao;
+
+  DataSet.FieldByName('ID').AsInteger := 0;
+  DataSet.FieldByName('ORDEM_ID').AsInteger := FOrdem.ID;
+  DataSet.FieldByName('QUANTIDADE').AsFloat := 1;
+  DataSet.FieldByName('VALOR_UNITARIO').AsCurrency := 0;
+  DataSet.FieldByName('ATIVO').AsInteger := 1;
+end;
+
+procedure TControllerOrdemServico.ItensBeforePost(
+  DataSet: TDataSet);
+var
+  Item: iItemOrdem;
+  Subtotal: Currency;
+  TotalOutrosItens: Currency;
+begin
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  ExigirEdicao;
+
+  if DataSet.FieldByName('ID').AsInteger <>
+     FIDItemAntesEdicao then
+    raise Exception.Create(
+      'O identificador do item nao pode ser alterado.');
+
+  if DataSet.FieldByName('ORDEM_ID').AsInteger <>
+     FOrdem.ID then
+    raise Exception.Create(
+      'O item nao pertence a OS em manutencao.');
+
+  if DataSet.FieldByName('ATIVO').AsInteger <> 1 then
+    raise Exception.Create(
+      'Utilize Excluir Item para remover o item da OS.');
+
+  Item := TEntidade.New.ItemOrdem;
+
+  Item.Descricao(
+    Trim(DataSet.FieldByName('DESCRICAO').AsString));
+
+  Item.Quantidade(
+    DataSet.FieldByName('QUANTIDADE').AsFloat);
+
+  Item.ValorUnitario(
+    DataSet.FieldByName('VALOR_UNITARIO').AsCurrency);
+
+  ValidarItem(Item);
+
+  Subtotal := CalcularSubtotal(
+    Item.Quantidade, Item.ValorUnitario);
+
+  TotalOutrosItens := FTotal - FSubtotalAntesEdicao;
+
+  if TotalOutrosItens > MAX_VALOR - Subtotal then
+    raise Exception.Create(
+      'O total da OS excede o limite permitido.');
+
+  DataSet.FieldByName('DESCRICAO').AsString :=
+    Item.Descricao;
+end;
+
+procedure TControllerOrdemServico.ItensBeforeDelete(
+  DataSet: TDataSet);
+begin
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  ExigirEdicao;
+end;
+
+procedure TControllerOrdemServico.ItensAposAlteracao(
+  DataSet: TDataSet);
+begin
+  if FAtualizandoItens > 0 then
+    Exit;
+
+  RecalcularTotal;
 end;
 
 function TControllerOrdemServico.ItensIguais(
@@ -881,6 +1263,68 @@ begin
   end;
 end;
 
+procedure TControllerOrdemServico.PreencherTabelaItens(
+  const AItens: TListaItensOS);
+var
+  Consulta: TDataSet;
+  I: Integer;
+begin
+  Consulta := FMemTableItens.DataSet;
+
+  if Consulta = nil then
+    raise Exception.Create(
+      'Tabela em memoria dos itens indisponivel.');
+
+  if not Consulta.Active then
+    raise Exception.Create(
+      'Tabela em memoria dos itens fechada.');
+
+  Inc(FAtualizandoItens);
+  try
+    Consulta.DisableControls;
+    try
+      FMemTableItens.Limpar;
+
+      for I := 0 to High(AItens) do
+      begin
+        Consulta.Append;
+        try
+          Consulta.FieldByName('ID').AsInteger :=
+            AItens[I].ID;
+
+          Consulta.FieldByName('ORDEM_ID').AsInteger :=
+            AItens[I].OrdemID;
+
+          Consulta.FieldByName('DESCRICAO').AsString :=
+            AItens[I].Descricao;
+
+          Consulta.FieldByName('QUANTIDADE').AsFloat :=
+            AItens[I].Quantidade;
+
+          Consulta.FieldByName('VALOR_UNITARIO').AsCurrency :=
+            AItens[I].ValorUnitario;
+
+          Consulta.FieldByName('ATIVO').AsInteger :=
+            Ord(AItens[I].Ativo);
+
+          Consulta.Post;
+        except
+          if Consulta.State in [dsEdit, dsInsert] then
+            Consulta.Cancel;
+
+          raise;
+        end;
+      end;
+
+      Consulta.First;
+    finally
+      Consulta.EnableControls;
+    end;
+  finally
+    Dec(FAtualizandoItens);
+  end;
+end;
+
 function TControllerOrdemServico.PrepararOrdem(
   const ADados: TDadosOrdemServico): iOrdemServico;
 var
@@ -928,6 +1372,7 @@ var
   I: Integer;
   Indice: Integer;
 begin
+  ExigirEdicao;
   ExigirManutencao;
   VerificarConexao;
 
@@ -935,13 +1380,14 @@ begin
     raise Exception.Create(
       'Existe uma transacao em andamento.');
 
-  for I := 0 to High(FItens) do
-    ValidarItem(FItens[I]);
+  ItensGravacao := LerItensMemoria;
 
-  RecalcularTotal;
+  for I := 0 to High(ItensGravacao) do
+    ValidarItem(ItensGravacao[I]);
+
+  FTotal := CalcularTotal(ItensGravacao);
 
   OrdemGravacao := PrepararOrdem(ADados);
-  ItensGravacao := CopiarItens(FItens);
 
   FConexao.IniciarTransacao;
   try
@@ -996,19 +1442,21 @@ begin
     end;
   end;
 
-  { A manutencao em memoria e encerrada somente apos o commit. }
-  FOrdem := nil;
-  SetLength(FItens, 0);
-  SetLength(FItensOriginais, 0);
-  FTotal := 0;
+  Descartar;
 end;
 
 procedure TControllerOrdemServico.Descartar;
 begin
-  FOrdem := nil;
-  SetLength(FItens, 0);
-  SetLength(FItensOriginais, 0);
-  FTotal := 0;
+  Inc(FAtualizandoItens);
+  try
+    FMemTableItens.Limpar;
+
+    FOrdem := nil;
+    SetLength(FItensOriginais, 0);
+    FTotal := 0;
+  finally
+    Dec(FAtualizandoItens);
+  end;
 end;
 
 procedure TControllerOrdemServico.AtualizarClientes;
@@ -1033,7 +1481,7 @@ begin
 
   Hoje := Date;
 
-  FDAOCadastro.BuscarPor([]);
+  FDAOCadastro.Listar;
   Consulta := ConsultaDAO(FDAOCadastro);
 
   try
@@ -1088,7 +1536,7 @@ end;
 
 function TControllerOrdemServico.DataSetItens: TDataSet;
 begin
-  Result := FDAOItens.DataSet;
+  Result := FMemTableItens.DataSet;
 end;
 
 end.

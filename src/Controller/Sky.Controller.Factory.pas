@@ -17,6 +17,7 @@ type
     constructor Create(const aArquivoINI: string;
       aTipoAcesso: TTipoAcessoDados);
     function CriarQuery: iQuery;
+    function CriarMemTable: iMemTable;
   public
     class function New(const aArquivoINI: String;
       aTipoAcesso: TTipoAcessoDados): iControllerFactory;
@@ -37,7 +38,9 @@ uses
   Sky.Model.Connection.FireDAC,
   Sky.Model.Connection.ADO,
   Sky.Model.Connection.Query.FireDAC,
-  Sky.Model.Connection.Query.ADO;
+  Sky.Model.Connection.Query.ADO,
+  Sky.Model.Connection.MemTable.ADO,
+  Sky.Model.Connection.MemTable.FireDAC;
 
 { TControllerFactory }
 
@@ -86,6 +89,7 @@ var
   DAOCadastro: iDAOOrdemServico;
   DAOItens: iDAOItemOrdem;
   DAOClientes: iDAOCliente;
+  MemTableItens: iMemTable;
 begin
   if not FConexao.Conectada then
     raise Exception.Create('Conexao fechada.');
@@ -122,12 +126,15 @@ begin
     ConsultaClientes,
     ComandoClientes);
 
+  MemTableItens := CriarMemTable;
+
   Result := TControllerOrdemServico.New(
     FConexao,
     DAOListagem,
     DAOCadastro,
     DAOItens,
-    DAOClientes);
+    DAOClientes,
+    MemTableItens);
 end;
 
 function TControllerFactory.Cliente: iControllerCliente;
@@ -162,6 +169,20 @@ begin
     FConexao,
     DAOListagem,
     DAOCadastro);
+end;
+
+function TControllerFactory.CriarMemTable: iMemTable;
+begin
+  case FTipoAcesso of
+    adFireDAC:
+      Result := TModelMemTableFireDAC.New;
+
+    adADO:
+      Result := TModelMemTableADO.New;
+  else
+    raise Exception.Create(
+      'Tipo de acesso a dados invalido.');
+  end;
 end;
 
 function TControllerFactory.CriarQuery: iQuery;
