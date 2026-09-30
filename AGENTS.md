@@ -16,4 +16,4 @@ Nunca misture recursos específicos das duas versões.
 - Não repita a solicitação nem explique conceitos básicos salvo quando solicitado.
 - Não invente informações; se faltar algo essencial, pergunte.
 - Não faça alterações além do escopo solicitado.
-- Priorize economia de tokens sem sacrificar correção. 
+- Priorize economia de tokens sem sacrificar correção. No newline at end of file
