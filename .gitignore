@@ -13,4 +13,4 @@ bin/config.ini
 /src/Service/__history
 /src/View/__history
 AGENTS.md
-
+*.dproj.local
