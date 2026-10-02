@@ -16,12 +16,8 @@ type
   private
     procedure Validar(const ACliente: iCliente);
     procedure ProtegerCliente(const AID: Integer);
-
-    procedure VerificarDesativacao(
-      const AID: Integer);
-
-    procedure PreencherParametros(
-      const ACliente: iCliente);
+    procedure VerificarDesativacao(const AID: Integer);
+    procedure PreencherParametros(const ACliente: iCliente);
   protected
     function SQLConsulta: string; override;
 
@@ -98,8 +94,7 @@ begin
       'O cliente CLIENTE NAO IDENTIFICADO nao pode ser alterado.');
 end;
 
-procedure TModelDAOCliente.VerificarDesativacao(
-  const AID: Integer);
+procedure TModelDAOCliente.VerificarDesativacao(const AID: Integer);
 begin
   FComando.SQL(
     'SELECT FIRST 1 ID FROM ORDEM_SERVICO ' +

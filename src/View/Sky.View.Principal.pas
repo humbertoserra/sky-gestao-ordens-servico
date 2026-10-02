@@ -89,6 +89,7 @@ type
     lblSomenteConsulta: TLabel;
     menuOS: TMenuItem;
     itemMenuExcluirOS: TMenuItem;
+    itemMenuOrdemServico: TMenuItem;
 
     procedure menuSairClick(Sender: TObject);
     procedure btnNovoClienteClick(Sender: TObject);
@@ -103,6 +104,7 @@ type
     procedure checkFiltroAberturaClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure itemMenuExcluirOSClick(Sender: TObject);
+    procedure itemMenuOrdemServicoClick(Sender: TObject);
   private
     FControllerFactory: iControllerFactory;
     FController: iControllerOrdemServico;
@@ -138,6 +140,8 @@ type
     procedure gridItemOrdemColExit(Sender: TObject);
     procedure gridItemOrdemKeyDown(
       Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure gridOSDrawColumnCell(Sender: TObject; const Rect: TRect;
+      DataCol: Integer; Column: TColumn; State: TGridDrawState);
   public
     destructor Destroy; override;
 
@@ -153,7 +157,8 @@ implementation
 
 uses
   Sky.View.Clientes,
-  Sky.Service.Utils;
+  Sky.Service.Utils,
+  Sky.View.Relatorios;
 
 destructor TFrmPrincipal.Destroy;
 begin
@@ -280,9 +285,11 @@ begin
     Pesquisar;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel atualizar os dados da tela principal: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -307,9 +314,11 @@ begin
       btnNovaOS.SetFocus;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel descartar as alteracoes: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -362,9 +371,11 @@ begin
       gridItemOrdem.SetFocus;
   except
     on E: Exception do
-      ShowMessage(
+    begin
+    ShowMessage(
         'Nao foi possivel remover o item: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -375,9 +386,11 @@ begin
     AtualizarIndicadores;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel atualizar a consulta: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -397,9 +410,11 @@ begin
     AtualizarIndicadores;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel atualizar a consulta: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -423,9 +438,11 @@ begin
       cbxCliente.SetFocus;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel iniciar uma nova OS: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -460,9 +477,11 @@ begin
     AtualizarApresentacaoItens;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel iniciar o item: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -531,10 +550,12 @@ begin
     AtualizarIndicadores;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'A OS foi salva, mas nao foi possivel atualizar a tela. ' +
         'Atualize a consulta pelo botao Filtrar. ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -600,9 +621,11 @@ begin
       cbxCliente.SetFocus;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'Nao foi possivel carregar a OS: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -773,6 +796,8 @@ begin
   finally
     gridOS.Columns.EndUpdate;
   end;
+
+  gridOS.OnDrawColumnCell := gridOSDrawColumnCell;
 end;
 
 procedure TFrmPrincipal.ConfirmarEdicaoItem;
@@ -1097,13 +1122,52 @@ begin
     AtualizarApresentacaoItens;
   except
     on E: Exception do
+    begin
       ShowMessage(E.Message);
+    end;
   end;
 end;
 
 procedure TFrmPrincipal.gridOSDblClick(Sender: TObject);
 begin
   CarregarOrdemSelecionada;
+end;
+
+procedure TFrmPrincipal.gridOSDrawColumnCell(Sender: TObject; const Rect: TRect;
+  DataCol: Integer; Column: TColumn; State: TGridDrawState);
+var
+  Atrasada: Boolean;
+begin
+  Atrasada := False;
+
+  if FController <> nil then
+    Atrasada := FController.ListagemEmAtraso;
+
+  gridOS.Canvas.Font.Assign(gridOS.Font);
+
+  if gdSelected in State then
+  begin
+    gridOS.Canvas.Brush.Color := clHighlight;
+    gridOS.Canvas.Font.Color := clHighlightText;
+  end
+  else
+  begin
+    gridOS.Canvas.Brush.Color := gridOS.Color;
+    gridOS.Canvas.Font.Color := gridOS.Font.Color;
+
+    if Atrasada then
+    begin
+      gridOS.Canvas.Brush.Color := RGB(255, 248, 220);
+      gridOS.Canvas.Font.Color := clMaroon;
+    end;
+  end;
+
+  if Atrasada then
+    gridOS.Canvas.Font.Style :=
+      gridOS.Canvas.Font.Style + [fsBold];
+
+  gridOS.Canvas.FillRect(Rect);
+  gridOS.DefaultDrawColumnCell(Rect, DataCol, Column, State);
 end;
 
 procedure TFrmPrincipal.gridOSKeyDown(Sender: TObject; var Key: Word;
@@ -1222,10 +1286,38 @@ begin
     AtualizarIndicadores;
   except
     on E: Exception do
+    begin
       ShowMessage(
         'A OS foi excluida, mas nao foi possivel ' +
         'atualizar a tela. Utilize o botao Filtrar. ' +
         E.Message);
+    end;
+  end;
+end;
+
+procedure TFrmPrincipal.itemMenuOrdemServicoClick(Sender: TObject);
+var
+  Formulario: TFrmRelatoriosOS;
+begin
+  try
+    VerificarInicializacao;
+
+    Formulario := TFrmRelatoriosOS.Create(Self);
+    try
+      Formulario.Inicializar(
+        FControllerFactory.RelatorioOS);
+
+      Formulario.ShowModal;
+    finally
+      Formulario.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      ShowMessage(
+        'Nao foi possivel abrir o relatorio: ' +
+        E.Message);
+    end;
   end;
 end;
 

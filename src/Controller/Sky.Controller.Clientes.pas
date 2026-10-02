@@ -4,8 +4,7 @@ interface
 
 uses
   System.SysUtils,
-  Data.DB,
-  Sky.Controller.Interfaces,
+  Data.DB, Sky.Controller.Interfaces,
   Sky.Model.Entity.Interfaces,
   Sky.Model.DAO.Interfaces,
   Sky.Model.Connection.Interfaces;

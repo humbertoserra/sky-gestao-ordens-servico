@@ -3,7 +3,7 @@ object FrmClientes: TFrmClientes
   Top = 0
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
-  Caption = 'Cadastro de Clientes'
+  Caption = '  Cadastro de Clientes'
   ClientHeight = 492
   ClientWidth = 845
   Color = clBtnFace

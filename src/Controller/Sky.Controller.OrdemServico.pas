@@ -89,6 +89,7 @@ type
     function LerItensMemoria: TListaItensOS;
     procedure AplicarItensMemoria(const aItens: TListaItensOS);
     function TotalEmEdicao: Currency;
+    function RegistroEmAtraso(const AConsulta: TDataSet): Boolean;
   public
     constructor Create(
       const AConexao: iConexao;
@@ -109,19 +110,13 @@ type
       const AMemTableItens: iMemTable): iControllerOrdemServico;
 
     procedure Pesquisar(const AFiltro: TFiltroOrdemServico);
-
     procedure Novo;
     procedure Carregar(const AID: Integer);
-
     function Dados: TDadosOrdemServico;
     function PodeEditar: Boolean;
-
     function PodeAlterarStatus(ANovoStatus: TStatusOrdemServico): Boolean;
-
     procedure NovoItem;
-
     function DadosItem(const AIndice: Integer): TDadosItemOrdem;
-
     procedure AtualizarItem(
       const AIndice: Integer;
       const ADados: TDadosItemOrdem);
@@ -129,19 +124,16 @@ type
     procedure ExcluirItem(const AIndice: Integer);
     function QuantidadeItens: Integer;
     procedure RecalcularTotal;
-
     procedure Salvar(const ADados: TDadosOrdemServico);
     procedure Excluir;
-
     procedure Descartar;
     procedure AtualizarClientes;
     procedure AtualizarIndicadores;
-
     function Indicadores: TIndicadoresOrdemServico;
-
     function DataSetListagem: TDataSet;
     function DataSetClientes: TDataSet;
     function DataSetItens: TDataSet;
+    function ListagemEmAtraso: Boolean;
   end;
 
 implementation
@@ -482,6 +474,11 @@ begin
   else
     Result.DataFechamento(
       AConsulta.FieldByName('DATA_FECHAMENTO').AsDateTime);
+end;
+
+function TControllerOrdemServico.ListagemEmAtraso: Boolean;
+begin
+  Result := RegistroEmAtraso(FDAOListagem.DataSet);
 end;
 
 function TControllerOrdemServico.LerItens(
@@ -1050,6 +1047,36 @@ begin
   FTotal := CalcularTotal(LerItensMemoria);
 end;
 
+function TControllerOrdemServico.RegistroEmAtraso(
+  const AConsulta: TDataSet): Boolean;
+var
+  Status: string;
+begin
+  Result := False;
+
+  if AConsulta = nil then
+    Exit;
+
+  if not AConsulta.Active then
+    Exit;
+
+  if AConsulta.IsEmpty then
+    Exit;
+
+  if AConsulta.FieldByName('DATA_PREVISTA').IsNull then
+    Exit;
+
+  Status := AConsulta.FieldByName('STATUS').AsString;
+
+  if (Status <> 'Aberta') and
+     (Status <> 'Em Andamento') then
+    Exit;
+
+  Result :=
+    Date > Trunc(
+      AConsulta.FieldByName('DATA_PREVISTA').AsDateTime);
+end;
+
 function TControllerOrdemServico.IndiceItem(
   const AItens: TListaItensOS;
   const AID: Integer): Integer;
@@ -1470,7 +1497,6 @@ var
   Consulta: TDataSet;
   Novos: TIndicadoresOrdemServico;
   Status: TStatusOrdemServico;
-  Hoje: TDateTime;
 begin
   VerificarConexao;
 
@@ -1478,8 +1504,6 @@ begin
   Novos.EmAndamento := 0;
   Novos.Concluidas := 0;
   Novos.Atrasadas := 0;
-
-  Hoje := Date;
 
   FDAOCadastro.Listar;
   Consulta := ConsultaDAO(FDAOCadastro);
@@ -1504,10 +1528,8 @@ begin
       end;
 
       if not (Status in [soConcluida, soCancelada]) then
-        if Trunc(Hoje) >
-           Trunc(Consulta.FieldByName(
-             'DATA_PREVISTA').AsDateTime) then
-          Inc(Novos.Atrasadas);
+        if RegistroEmAtraso(Consulta) then
+                Inc(Novos.Atrasadas);
 
       Consulta.Next;
     end;

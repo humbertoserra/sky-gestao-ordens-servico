@@ -26,6 +26,16 @@ type
     soCancelada
   );
 
+  TStatusOrdemServicoSelecionados = set of TStatusOrdemServico;
+
+  TFiltroRelatoriosOS = record
+    FiltraPeriodo: Boolean;
+    DataInicial: TDateTime;
+    DataFinal: TDateTime;
+    NomeCliente: String;
+    StatusSelecionados: TStatusOrdemServicoSelecionados;
+  end;
+
   TDadosCliente = record
     ID: Integer;
     Nome: string;
@@ -109,11 +119,18 @@ type
     function DataSetListagem: TDataSet;
     function DataSetClientes: TDataSet;
     function DataSetItens: TDataSet;
+    function ListagemEmAtraso: Boolean;
+  end;
+
+  iControllerRelatoriosOS = interface
+    procedure Pesquisar(const aFiltro: TFiltroRelatoriosOS);
+    function DataSet: TDataSet;
   end;
 
   iControllerFactory = interface
     function Cliente: iControllerCliente;
     function OrdemServico: iControllerOrdemServico;
+    function RelatorioOS: iControllerRelatoriosOS;
   end;
 
 implementation

@@ -28,7 +28,11 @@ uses
   Sky.Service.Utils in 'src\Service\Sky.Service.Utils.pas',
   Sky.Controller.OrdemServico in 'src\Controller\Sky.Controller.OrdemServico.pas',
   Sky.Model.Connection.MemTable.ADO in 'src\Model\Connection\Sky.Model.Connection.MemTable.ADO.pas',
-  Sky.Model.Connection.MemTable.FireDAC in 'src\Model\Connection\Sky.Model.Connection.MemTable.FireDAC.pas';
+  Sky.Model.Connection.MemTable.FireDAC in 'src\Model\Connection\Sky.Model.Connection.MemTable.FireDAC.pas',
+  Sky.View.Relatorios in 'src\View\Sky.View.Relatorios.pas' {FrmRelatoriosOS},
+  Sky.Model.DAO.RelatorioOS in 'src\Model\DAO\Sky.Model.DAO.RelatorioOS.pas',
+  Sky.Controller.RelatorioOS in 'src\Controller\Sky.Controller.RelatorioOS.pas',
+  Sky.View.ImpressaoOS in 'src\View\Sky.View.ImpressaoOS.pas' {FrmImpressaoOS};
 
 {$R *.res}
 
@@ -48,14 +52,13 @@ begin
         adFireDAC);
 
       Application.CreateForm(TFrmPrincipal, FrmPrincipal);
-  FrmPrincipal.Inicializar(ControllerFactory);
+      FrmPrincipal.Inicializar(ControllerFactory);
 
       Application.Run;
     except
       on E: Exception do
       begin
-        ShowMessage(
-          'Nao foi possivel executar a aplicacao: ' +
+        ShowMessage('Nao foi possivel executar a aplicacao: ' +
           E.Message);
 
         ExitCode := 1;

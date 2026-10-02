@@ -3,7 +3,7 @@ object FrmPrincipal: TFrmPrincipal
   Top = 0
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
-  Caption = 'SKY - Gest'#227'o de Ordens de Servi'#231'o'
+  Caption = '  SKY - Gest'#227'o de Ordens de Servi'#231'o'
   ClientHeight = 641
   ClientWidth = 900
   Color = clBtnFace
@@ -638,6 +638,10 @@ object FrmPrincipal: TFrmPrincipal
     end
     object Relatrios1: TMenuItem
       Caption = '&Relat'#243'rios'
+      object itemMenuOrdemServico: TMenuItem
+        Caption = 'Ordem de Servi'#231'o'
+        OnClick = itemMenuOrdemServicoClick
+      end
     end
     object menuSair: TMenuItem
       Caption = '&Sair'

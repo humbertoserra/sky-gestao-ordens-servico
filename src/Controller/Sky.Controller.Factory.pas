@@ -23,6 +23,7 @@ type
       aTipoAcesso: TTipoAcessoDados): iControllerFactory;
     function Cliente: iControllerCliente;
     function OrdemServico: iControllerOrdemServico;
+    function RelatorioOS: iControllerRelatoriosOS;
   end;
 
 implementation
@@ -40,7 +41,9 @@ uses
   Sky.Model.Connection.Query.FireDAC,
   Sky.Model.Connection.Query.ADO,
   Sky.Model.Connection.MemTable.ADO,
-  Sky.Model.Connection.MemTable.FireDAC;
+  Sky.Model.Connection.MemTable.FireDAC,
+  Sky.Controller.RelatorioOS,
+  Sky.Model.DAO.RelatorioOS;
 
 { TControllerFactory }
 
@@ -135,6 +138,20 @@ begin
     DAOItens,
     DAOClientes,
     MemTableItens);
+end;
+
+function TControllerFactory.RelatorioOS: iControllerRelatoriosOS;
+var
+  Consulta: iQuery;
+  DAO: iDAORelatorioOS;
+begin
+  if not FConexao.Conectada then
+    raise Exception.Create('Conexao fechada.');
+
+  Consulta := CriarQuery;
+  DAO := TModelDAORelatorioOS.New(Consulta);
+
+  Result := TControllerRelatorioOS.New(DAO);
 end;
 
 function TControllerFactory.Cliente: iControllerCliente;

@@ -48,6 +48,14 @@ type
     procedure Excluir(const AID: Integer);
   end;
 
+  iDAORelatorioOS = interface
+    procedure Pesquisar(
+      const AFiltrarPeriodo: Boolean;
+      const ADataInicial, ADataFinal: TDateTime;
+      const ANomeCliente: string;
+      const AStatus: array of string);
+    function DataSet: TDataSet;
+  end;
 
 implementation
 
