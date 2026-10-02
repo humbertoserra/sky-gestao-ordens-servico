@@ -21,6 +21,9 @@ type
 
 implementation
 
+uses
+  Sky.Service.Log;
+
 { TControllerRelatorioOS }
 
 constructor TControllerRelatorioOS.Create(const ADAO: iDAORelatorioOS);
@@ -54,7 +57,7 @@ var
 begin
   if AFiltro.FiltraPeriodo then
     if Trunc(AFiltro.DataInicial) > Trunc(AFiltro.DataFinal) then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'Data inicial posterior a data final.');
 
   SetLength(StatusConsulta, 0);

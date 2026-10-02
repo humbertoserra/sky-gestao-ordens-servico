@@ -53,7 +53,8 @@ var
 implementation
 
 uses
-  Sky.View.ImpressaoOS;
+  Sky.View.ImpressaoOS,
+  Sky.Service.Log;
 
 {$R *.dfm}
 
@@ -107,7 +108,7 @@ begin
     end;
 
     if not SameText(ExtractFileExt(Arquivo), '.pdf') then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'Informe um arquivo com extensao .pdf.');
 
     groupFiltros.Enabled := False;
@@ -126,6 +127,11 @@ begin
       try
         Impressao.Preparar(FController.DataSet, AtualizarProgresso);
         Impressao.ExportarPDF(Arquivo);
+
+        TLog.Registrar(llInfo, 'Relatorios.btnExportarPDFClick',
+          'Exportacao da listagem de ordens de servico', 'PDF exportado',
+          'Arquivo=' + Arquivo);
+
         pbRelatorio.Style := pbstMarquee;
         pbRelatorio.Update;
       finally
@@ -145,6 +151,9 @@ begin
   except
     on E: Exception do
       begin
+        TLog.Excecao(llError, 'Relatorios.btnExportarPDFClick',
+          'Exportacao de ordens de servico', E);
+
         ShowMessage(
           'Nao foi possivel exportar o PDF: ' +
           E.Message);
@@ -203,6 +212,9 @@ begin
   except
     on E: Exception do
       begin
+        TLog.Excecao(llError, 'Relatorios.btnVisualizarClick',
+          'Visualizacao de ordens de servico', E);
+
         ShowMessage(
           'Nao foi possivel visualizar o relatorio: ' +
           E.Message);
@@ -270,7 +282,7 @@ begin
     if Result.DataInicial > Result.DataFinal then
     begin
       dtpInicial.SetFocus;
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'Data inicial posterior a data final.');
     end;
 

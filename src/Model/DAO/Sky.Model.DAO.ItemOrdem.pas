@@ -14,14 +14,11 @@ type
     TModelDAO, iDAOItemOrdem)
   private
     procedure Validar(const AItem: iItemOrdem);
-
-    procedure PreencherParametros(
-      const AItem: iItemOrdem);
+    procedure PreencherParametros(const AItem: iItemOrdem);
   protected
     function SQLConsulta: string; override;
 
-    function ColunaFiltro(
-      const ACampo: string;
+    function ColunaFiltro(const ACampo: string;
       out ATexto: Boolean): string; override;
   public
     class function New(
@@ -36,13 +33,15 @@ type
 
 implementation
 
+uses
+  Sky.Service.Log;
+
 class function TModelDAOItemOrdem.New(
   const AConexao: iConexao;
   const AConsulta: iQuery;
   const AComando: iQuery): iDAOItemOrdem;
 begin
-  Result := Self.Create(
-    AConexao, AConsulta, AComando);
+  Result := Self.Create(AConexao, AConsulta, AComando);
 end;
 
 function TModelDAOItemOrdem.SQLConsulta: string;
@@ -82,11 +81,11 @@ begin
     True);
 
   if not (AItem.Quantidade > 0) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Quantidade deve ser maior que zero.');
 
   if AItem.ValorUnitario < 0 then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Valor unitario nao pode ser negativo.');
 end;
 

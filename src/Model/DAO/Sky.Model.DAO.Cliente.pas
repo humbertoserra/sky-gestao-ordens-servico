@@ -37,6 +37,9 @@ type
 
 implementation
 
+uses
+  Sky.Service.Log;
+
 class function TModelDAOCliente.New(
   const AConexao: iConexao;
   const AConsulta: iQuery;
@@ -90,7 +93,7 @@ begin
   ValidarID(AID);
 
   if AID = 1 then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O cliente CLIENTE NAO IDENTIFICADO nao pode ser alterado.');
 end;
 
@@ -108,7 +111,7 @@ begin
     FComando.Abrir;
 
     if not FComando.DataSet.IsEmpty then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'Cliente possui OS ativa aberta ou em andamento.');
   finally
     FComando.Fechar;

@@ -142,6 +142,7 @@ type
       Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure gridOSDrawColumnCell(Sender: TObject; const Rect: TRect;
       DataCol: Integer; Column: TColumn; State: TGridDrawState);
+    procedure TratarExcecaoAplicacao(Sender: TObject; E: Exception);
   public
     destructor Destroy; override;
 
@@ -158,10 +159,28 @@ implementation
 uses
   Sky.View.Clientes,
   Sky.Service.Utils,
-  Sky.View.Relatorios;
+  Sky.View.Relatorios,
+  Sky.Service.Log;
+
+
+procedure TFrmPrincipal.TratarExcecaoAplicacao(Sender: TObject; E: Exception);
+var
+  Contexto: string;
+begin
+  if E is EAbort then
+    exit;
+
+  Contexto := 'Excecao nao tratada';
+
+  TLog.Excecao(llError, 'Aplicacao.OnException', Contexto, E);
+
+  Application.ShowException(E);
+end;
 
 destructor TFrmPrincipal.Destroy;
 begin
+  Application.OnException := nil;
+
   if FDataSourceItens <> nil then
     FDataSourceItens.DataSet := nil;
 
@@ -242,8 +261,6 @@ var
   ClienteSalvoID: Integer;
   SelecionarAoRetornar: Boolean;
 begin
-  { O menu abre com False e ID zero.
-    O botao da OS inicia um novo ou informa o ID selecionado. }
   SelecionarAoRetornar := ANovo or (AClienteID > 0);
 
   try
@@ -267,8 +284,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel abrir o cadastro de clientes: ' +
+      TLog.Excecao(llError, 'Principal.AbrirCadastroCliente',
+        'Abertura do cadastro de clientes', E);
+
+      ShowMessage('Nao foi possivel abrir o cadastro de clientes: ' +
         E.Message);
       Exit;
     end;
@@ -286,8 +305,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel atualizar os dados da tela principal: ' +
+      TLog.Excecao(llError, 'Principal.AbrirCadastroCliente',
+        'Atualizacao da tela apos cadastro de clientes', E);
+
+      ShowMessage('Nao foi possivel atualizar os dados da tela principal: ' +
         E.Message);
     end;
   end;
@@ -315,9 +336,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel descartar as alteracoes: ' +
-        E.Message);
+      TLog.Excecao(llError, 'Principal.AbrirCadastroCliente',
+        'Atualizacao da tela apos cadastro de clientes', E);
+
+      ShowMessage('Nao foi possivel descartar as alteracoes: ' + E.Message);
     end;
   end;
 end;
@@ -372,9 +394,10 @@ begin
   except
     on E: Exception do
     begin
-    ShowMessage(
-        'Nao foi possivel remover o item: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.btnExcluiItemClick',
+        'Remocao de item na edicao da OS', E);
+
+      ShowMessage('Nao foi possivel remover o item: ' + E.Message);
     end;
   end;
 end;
@@ -387,9 +410,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel atualizar a consulta: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.btnFiltrarClick',
+        'Pesquisa de ordens de servico', E);
+
+      ShowMessage('Nao foi possivel atualizar a consulta: ' + E.Message);
     end;
   end;
 end;
@@ -411,9 +435,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel atualizar a consulta: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.btnLimparClick',
+        'Limpeza dos filtros e atualizacao da consulta', E);
+
+      ShowMessage('Nao foi possivel atualizar a consulta: ' + E.Message);
     end;
   end;
 end;
@@ -439,9 +464,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel iniciar uma nova OS: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.btnNovaOSClick',
+        'Preparacao de uma nova OS', E);
+
+      ShowMessage('Nao foi possivel iniciar uma nova OS: ' + E.Message);
     end;
   end;
 end;
@@ -478,9 +504,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel iniciar o item: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.btnNovoItemClick',
+        'Inclusao de item na edicao da OS', E);
+
+      ShowMessage('Nao foi possivel iniciar o item: ' + E.Message);
     end;
   end;
 end;
@@ -533,9 +560,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel salvar a OS: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.btnSalvarOSClick',
+        'Gravacao da OS e dos itens', E);
+
+      ShowMessage('Nao foi possivel salvar a OS: ' + E.Message);
       Exit;
     end;
   end;
@@ -551,8 +579,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'A OS foi salva, mas nao foi possivel atualizar a tela. ' +
+      TLog.Excecao(llError, 'OS.btnSalvarOSClick',
+        'Atualizacao da tela apos OS gravada', E);
+
+      ShowMessage('A OS foi salva, mas nao foi possivel atualizar a tela. ' +
         'Atualize a consulta pelo botao Filtrar. ' +
         E.Message);
     end;
@@ -622,9 +652,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel carregar a OS: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.CarregarOrdemSelecionada',
+        'Carregamento da OS selecionada', E);
+
+      ShowMessage('Nao foi possivel carregar a OS: ' + E.Message);
     end;
   end;
 end;
@@ -1103,18 +1134,15 @@ begin
   try
     if Tecla = VK_RETURN then
     begin
-      if gridItemOrdem.SelectedIndex <
-         gridItemOrdem.Columns.Count - 1 then
-        gridItemOrdem.SelectedIndex :=
-          gridItemOrdem.SelectedIndex + 1
+      if gridItemOrdem.SelectedIndex < gridItemOrdem.Columns.Count - 1 then
+        gridItemOrdem.SelectedIndex := gridItemOrdem.SelectedIndex + 1
       else
         Perform(WM_NEXTDLGCTL, 0, 0);
     end
     else
     begin
       if gridItemOrdem.SelectedIndex > 0 then
-        gridItemOrdem.SelectedIndex :=
-          gridItemOrdem.SelectedIndex - 1
+        gridItemOrdem.SelectedIndex := gridItemOrdem.SelectedIndex - 1
       else
         Perform(WM_NEXTDLGCTL, 1, 0);
     end;
@@ -1123,6 +1151,9 @@ begin
   except
     on E: Exception do
     begin
+      TLog.Excecao(llError, 'OS.gridItemOrdemKeyDown',
+        'Edicao dos itens da OS', E);
+
       ShowMessage(E.Message);
     end;
   end;
@@ -1180,9 +1211,10 @@ begin
   end;
 end;
 
-procedure TFrmPrincipal.Inicializar(
-  const aFactory: iControllerFactory);
+procedure TFrmPrincipal.Inicializar(const aFactory: iControllerFactory);
 begin
+  Application.OnException := TratarExcecaoAplicacao;
+
   if aFactory = nil then
     raise Exception.Create(
       'Fabrica de controllers nao informada.');
@@ -1269,9 +1301,9 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel excluir a OS: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.itemMenuExcluirOSClick', 'Exclusao da OS', E);
+
+      ShowMessage('Nao foi possivel excluir a OS: ' + E.Message);
       Exit;
     end;
   end;
@@ -1287,10 +1319,11 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'A OS foi excluida, mas nao foi possivel ' +
-        'atualizar a tela. Utilize o botao Filtrar. ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.itemMenuExcluirOSClick',
+        'Atualizacao da tela apos OS excluida', E);
+
+      ShowMessage('A OS foi excluida, mas nao foi possivel ' +
+        'atualizar a tela. Utilize o botao Filtrar. ' + E.Message);
     end;
   end;
 end;
@@ -1314,9 +1347,10 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage(
-        'Nao foi possivel abrir o relatorio: ' +
-        E.Message);
+      TLog.Excecao(llError, 'OS.CarregarOrdemSelecionada',
+        'Carregamento da OS selecionada', E);
+
+      ShowMessage('Nao foi possivel abrir o relatorio: ' + E.Message);
     end;
   end;
 end;

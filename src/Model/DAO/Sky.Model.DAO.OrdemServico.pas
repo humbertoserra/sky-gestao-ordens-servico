@@ -36,6 +36,9 @@ type
 
 implementation
 
+uses
+  Sky.Service.Log;
+
 class function TModelDAOOrdemServico.New(
   const AConexao: iConexao;
   const AConsulta: iQuery;
@@ -92,7 +95,7 @@ begin
 
   if Trunc(AOrdem.DataPrevista) <
      Trunc(AOrdem.DataAbertura) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Data prevista anterior a data de abertura.');
 
   if AOrdem.ValorTotal < 0 then

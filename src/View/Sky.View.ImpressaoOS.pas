@@ -76,6 +76,8 @@ var
 
 implementation
 
+uses
+  Sky.Service.Log;
 
 {$R *.dfm}
 
@@ -93,10 +95,10 @@ end;
 procedure TFrmImpressaoOS.ExportarPDF(const aArquivo: string);
 begin
   if Trim(AArquivo) = '' then
-    raise Exception.Create('Nome do arquivo nao informado.');
+    raise EOperacaoRecusada.Create('Nome do arquivo nao informado.');
 
   if not SameText(ExtractFileExt(AArquivo), '.pdf') then
-    raise Exception.Create('Informe um arquivo com extensao .pdf.');
+    raise EOperacaoRecusada.Create('Informe um arquivo com extensao .pdf.');
 
   pdfRelatorio.ShowProgress := False;
   pdfRelatorio.FileName := AArquivo;
@@ -113,7 +115,7 @@ begin
     raise Exception.Create('Consulta do relatorio fechada.');
 
   if ADataSet.IsEmpty then
-    raise Exception.Create('Nenhuma OS encontrada para os filtros.');
+    raise EOperacaoRecusada.Create('Nenhuma OS encontrada para os filtros.');
 
   FProgresso := AProgresso;
   FTotalRegistros := 0;

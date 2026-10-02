@@ -32,16 +32,10 @@ type
       const AColunas: array of string): string;
 
     procedure ExigirTransacao;
-
-    procedure VerificarRegistro(
-      const ATabela: string;
-      const AID: Integer);
-
-    function GerarID(
-      const AGenerator: string): Integer;
+    procedure VerificarRegistro(const ATabela: string; const AID: Integer);
+    function GerarID(const AGenerator: string): Integer;
 
     procedure ExecutarComando;
-
     procedure ValidarID(const AID: Integer);
 
     procedure ValidarTexto(
@@ -56,17 +50,15 @@ type
       const AComando: iQuery);
 
     function Listar: iDAO;
-
-    function BuscarPorId(
-      const AID: Integer): iDAO;
-
-    function BuscarPor(
-      const AFiltros: array of TFiltro): iDAO;
-
+    function BuscarPorId(const AID: Integer): iDAO;
+    function BuscarPor(const AFiltros: array of TFiltro): iDAO;
     function DataSet: TDataSet;
   end;
 
 implementation
+
+uses
+  Sky.Service.Log;
 
 constructor TModelDAO.Create(
   const AConexao: iConexao;
@@ -106,11 +98,11 @@ procedure TModelDAO.ValidarTexto(
   const AObrigatorio: Boolean);
 begin
   if AObrigatorio and (Trim(AValor) = '') then
-    raise Exception.CreateFmt(
+    raise EOperacaoRecusada.CreateFmt(
       'Informe %s.', [ACampo]);
 
   if Length(AValor) > ATamanho then
-    raise Exception.CreateFmt(
+    raise EOperacaoRecusada.CreateFmt(
       '%s permite ate %d caracteres.',
       [ACampo, ATamanho]);
 end;

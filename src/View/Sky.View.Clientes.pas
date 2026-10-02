@@ -82,12 +82,11 @@ type
     procedure GridClientesKeyDown(
       Sender: TObject; var Key: Word; Shift: TShiftState);
     function PodeDescartarEdicao: Boolean;
-    procedure ConsultarFechamento(
-      Sender: TObject; var CanClose: Boolean);
+    procedure ConsultarFechamento(Sender: TObject; var CanClose: Boolean);
     procedure CarregarCombo;
-    procedure TelefoneGetText(
-      Sender: TField; var Text: string; DisplayText: Boolean);
-      procedure ConfigurarFiltro;
+    procedure TelefoneGetText(Sender: TField; var Text: string;
+      DisplayText: Boolean);
+    procedure ConfigurarFiltro;
   public
     procedure Inicializar(
       const AController: iControllerCliente;
@@ -102,10 +101,11 @@ var
 
 implementation
 
-{$R *.dfm}
-
 uses
-  Sky.Service.Utils;
+  Sky.Service.Utils,
+  Sky.Service.Log;
+
+{$R *.dfm}
 
 procedure TFrmClientes.btnFiltrarClick(Sender: TObject);
 begin
@@ -113,7 +113,12 @@ begin
     Pesquisar;
   except
     on E: Exception do
+    begin
+      TLog.Excecao(llError, 'Clientes.btnFiltrarClick',
+        'Pesquisa de clientes', E);
+
       ShowMessage(E.Message);
+    end;
   end;
 end;
 
@@ -162,6 +167,9 @@ begin
   except
     on E: Exception do
     begin
+      TLog.Excecao(llError, 'Clientes.btnSalvarClick',
+        'Gravacao do cliente e atualizacao do formulario', E);
+
       ShowMessage(E.Message);
       Exit;
     end;
@@ -171,9 +179,13 @@ begin
     Pesquisar;
   except
     on E: Exception do
-      ShowMessage(
-        'Cliente salvo, mas a lista nao foi atualizada: ' +
+    begin
+      TLog.Excecao(llError, 'Clientes.btnSalvarClick',
+        'Atualizacao da lista apos cliente gravado', E);
+
+      ShowMessage('Cliente salvo, mas a lista nao foi atualizada: ' +
         E.Message);
+    end;
   end;
 end;
 
@@ -379,7 +391,12 @@ begin
     CarregarSelecionado;
   except
     on E: Exception do
+    begin
+      TLog.Excecao(llError, 'Clientes.GridClientesDblClick',
+        'Carregamento do cliente selecionado', E);
+
       ShowMessage(E.Message);
+    end;
   end;
 end;
 
@@ -492,7 +509,7 @@ begin
     2: Campo := pcTelefone;
     3: Campo := pcEmail;
   else
-    raise Exception.Create('Selecione o criterio de pesquisa.');
+    raise EOperacaoRecusada.Create('Selecione o criterio de pesquisa.');
   end;
 
   case cbxFiltroSituacao.ItemIndex of
@@ -500,7 +517,7 @@ begin
     1: Situacao := scAtivos;
     2: Situacao := scInativos;
   else
-    raise Exception.Create('Selecione a situacao.');
+    raise EOperacaoRecusada.Create('Selecione a situacao.');
   end;
 
   FController.Pesquisar(Campo, editTermo.Text, Situacao);

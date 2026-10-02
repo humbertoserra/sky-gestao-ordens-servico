@@ -32,7 +32,8 @@ uses
   Sky.View.Relatorios in 'src\View\Sky.View.Relatorios.pas' {FrmRelatoriosOS},
   Sky.Model.DAO.RelatorioOS in 'src\Model\DAO\Sky.Model.DAO.RelatorioOS.pas',
   Sky.Controller.RelatorioOS in 'src\Controller\Sky.Controller.RelatorioOS.pas',
-  Sky.View.ImpressaoOS in 'src\View\Sky.View.ImpressaoOS.pas' {FrmImpressaoOS};
+  Sky.View.ImpressaoOS in 'src\View\Sky.View.ImpressaoOS.pas' {FrmImpressaoOS},
+  Sky.Service.Log in 'src\Service\Sky.Service.Log.pas';
 
 {$R *.res}
 
@@ -58,6 +59,7 @@ begin
     except
       on E: Exception do
       begin
+        TLog.Excecao(llError, 'Sky.Inicializar', 'Inicializacao da aplicacao', E);
         ShowMessage('Nao foi possivel executar a aplicacao: ' +
           E.Message);
 

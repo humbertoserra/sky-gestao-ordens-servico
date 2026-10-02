@@ -45,7 +45,8 @@ implementation
 { TControllerCliente }
 
 uses
-  Sky.Model.Entity;
+  Sky.Model.Entity,
+  Sky.Service.Log;
 
 procedure TControllerCliente.Carregar(const AID: Integer);
 var
@@ -64,7 +65,7 @@ begin
     raise Exception.Create('Consulta de cliente fechada.');
 
   if Consulta.IsEmpty then
-    raise Exception.Create('Cliente nao encontrado.');
+    raise EOperacaoRecusada.Create('Cliente nao encontrado.');
 
   Cliente := TEntidade.New.Cliente;
 
@@ -272,12 +273,12 @@ begin
 
   if (Length(Result) <> 10) and
      (Length(Result) <> 11) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Informe o telefone com DDD, contendo 10 ou 11 digitos.');
 
   if Length(Result) = 11 then
     if Result[3] <> '9' then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'O celular deve iniciar com 9 apos o DDD.');
 end;
 
@@ -299,11 +300,11 @@ var
   ClienteGravacao: iCliente;
 begin
   if FCliente = nil then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Selecione um cliente ou inicie um novo cadastro.');
 
   if not PodeEditar then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O cliente CLIENTE NAO IDENTIFICADO nao pode ser alterado.');
 
   if ADados.ID <> FCliente.ID then
@@ -354,6 +355,8 @@ begin
   end;
 
   FCliente := ClienteGravacao;
+  TLog.Registrar(llInfo, 'Cliente.Salvar', 'CLIENTE_ID=' +
+    IntToStr(FCliente.ID), 'Cliente Gravado');
 end;
 
 procedure TControllerCliente.VerificarConexao;

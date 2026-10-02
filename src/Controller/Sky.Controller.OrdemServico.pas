@@ -43,6 +43,7 @@ type
     procedure ItensAposAlteracao(DataSet: TDataSet);
     procedure VerificarConexao;
     procedure ExigirManutencao;
+    procedure ExigirEdicao;
     procedure ValidarIndice(const AIndice: Integer);
 
     function ConsultaDAO(const ADAO: iDAO): TDataSet;
@@ -61,29 +62,22 @@ type
     function CopiarItens(const AItens: TListaItensOS): TListaItensOS;
     function ArredondarValor(const AValor: Currency): Currency;
 
-    function CalcularSubtotal(
-      const AQuantidade: Double;
+    function CalcularSubtotal(const AQuantidade: Double;
       const AValorUnitario: Currency): Currency;
 
     function CalcularTotal(const AItens: TListaItensOS): Currency;
-
     procedure ValidarItem(const AItem: iItemOrdem);
-
     function IndiceItem(const AItens: TListaItensOS; const AID: Integer): Integer;
 
-    function ItensIguais(
-      const APrimeiro: iItemOrdem;
+    function ItensIguais(const APrimeiro: iItemOrdem;
       const ASegundo: iItemOrdem): Boolean;
 
-    function OrdensIguais(
-      const APrimeira: iOrdemServico;
+    function OrdensIguais(const APrimeira: iOrdemServico;
       const ASegunda: iOrdemServico): Boolean;
 
     procedure ConferirEstadoPersistido;
 
-    function PrepararOrdem(
-      const ADados: TDadosOrdemServico): iOrdemServico;
-    procedure ExigirEdicao;
+    function PrepararOrdem(const ADados: TDadosOrdemServico): iOrdemServico;
     procedure CriarTabelaItens;
     procedure PreencherTabelaItens(const AItens: TListaItensOS);
     function LerItensMemoria: TListaItensOS;
@@ -139,7 +133,8 @@ type
 implementation
 
 uses
-  Sky.Model.Entity;
+  Sky.Model.Entity,
+  sky.Service.Log;
 
 const
   MAX_QUANTIDADE: Currency = 9999999999.99;
@@ -266,7 +261,7 @@ begin
   ExigirManutencao;
 
   if not PodeEditar then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Esta OS esta concluida, cancelada ou excluida ' +
       'e permite apenas consulta.');
 end;
@@ -274,7 +269,7 @@ end;
 procedure TControllerOrdemServico.ExigirManutencao;
 begin
   if FOrdem = nil then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Selecione uma OS ou inicie um novo cadastro.');
 end;
 
@@ -405,75 +400,55 @@ begin
   Nome := UpperCase(Trim(AFiltro.NomeCliente));
 
   if Nome <> '' then
-    AdicionarFiltro(
-      Filtros, 'NomeCliente', ofContem, Nome);
+    AdicionarFiltro(Filtros, 'NomeCliente', ofContem, Nome);
 
   if AFiltro.FiltrarPeriodo then
   begin
     if Trunc(AFiltro.DataInicial) >
        Trunc(AFiltro.DataFinal) then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'A data inicial deve ser anterior ou igual a final.');
 
-    AdicionarFiltro(
-      Filtros,
-      'DataAbertura',
-      ofMaiorOuIgual,
+    AdicionarFiltro(Filtros, 'DataAbertura', ofMaiorOuIgual,
       VarFromDateTime(Trunc(AFiltro.DataInicial)));
 
-    AdicionarFiltro(
-      Filtros,
-      'DataAbertura',
-      ofMenorOuIgual,
+    AdicionarFiltro(Filtros, 'DataAbertura', ofMenorOuIgual,
       VarFromDateTime(Trunc(AFiltro.DataFinal)));
   end;
 
   if AFiltro.FiltrarStatus then
-    AdicionarFiltro(
-      Filtros,
-      'Status',
-      ofIgual,
-      StatusTexto(AFiltro.Status));
+    AdicionarFiltro(Filtros, 'Status', ofIgual, StatusTexto(AFiltro.Status));
 
   FDAOListagem.BuscarPor(Filtros);
 end;
 
-function TControllerOrdemServico.LerOrdem(
-  AConsulta: TDataSet): iOrdemServico;
+function TControllerOrdemServico.LerOrdem(AConsulta: TDataSet): iOrdemServico;
 begin
   if AConsulta.IsEmpty then
-    raise Exception.Create('Ordem de Servico nao encontrada.');
+    raise EOperacaoRecusada.Create('Ordem de Servico nao encontrada.');
 
   Result := TEntidade.New.OrdemServico;
 
   Result.ID(AConsulta.FieldByName('ID').AsInteger);
 
-  Result.ClienteID(
-    AConsulta.FieldByName('CLIENTE_ID').AsInteger);
+  Result.ClienteID(AConsulta.FieldByName('CLIENTE_ID').AsInteger);
 
-  Result.DataAbertura(
-    AConsulta.FieldByName('DATA_ABERTURA').AsDateTime);
+  Result.DataAbertura(AConsulta.FieldByName('DATA_ABERTURA').AsDateTime);
 
-  Result.DataPrevista(
-    AConsulta.FieldByName('DATA_PREVISTA').AsDateTime);
+  Result.DataPrevista(AConsulta.FieldByName('DATA_PREVISTA').AsDateTime);
 
-  Result.Status(
-    AConsulta.FieldByName('STATUS').AsString);
+  Result.Status(AConsulta.FieldByName('STATUS').AsString);
 
-  Result.Problema(
-    AConsulta.FieldByName('DESCRICAO_PROBLEMA').AsString);
+  Result.Problema(AConsulta.FieldByName('DESCRICAO_PROBLEMA').AsString);
 
-  Result.ValorTotal(
-    AConsulta.FieldByName('VALOR_TOTAL').AsCurrency);
+  Result.ValorTotal(AConsulta.FieldByName('VALOR_TOTAL').AsCurrency);
 
-  Result.Ativo(
-    AConsulta.FieldByName('ATIVO').AsInteger = 1);
+  Result.Ativo(AConsulta.FieldByName('ATIVO').AsInteger = 1);
 
   if AConsulta.FieldByName('DATA_FECHAMENTO').IsNull then
     Result.LimparDataFechamento
   else
-    Result.DataFechamento(
-      AConsulta.FieldByName('DATA_FECHAMENTO').AsDateTime);
+    Result.DataFechamento(AConsulta.FieldByName('DATA_FECHAMENTO').AsDateTime);
 end;
 
 function TControllerOrdemServico.ListagemEmAtraso: Boolean;
@@ -815,37 +790,36 @@ begin
   Result := Result + Centavos / 100;
 end;
 
-function TControllerOrdemServico.CalcularSubtotal(
-  const AQuantidade: Double;
+function TControllerOrdemServico.CalcularSubtotal(const AQuantidade: Double;
   const AValorUnitario: Currency): Currency;
 var
   Quantidade: Currency;
 begin
   if not (AQuantidade > 0) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'A quantidade deve ser maior que zero.');
 
   if not (AQuantidade <= MAX_QUANTIDADE) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'A quantidade excede o limite permitido.');
 
   Quantidade := AQuantidade;
 
   if (Abs(AQuantidade - Quantidade) > 0.000001) or
      (ArredondarValor(Quantidade) <> Quantidade) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'A quantidade permite ate duas casas decimais.');
 
   if AValorUnitario < 0 then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O valor unitario nao pode ser negativo.');
 
   if AValorUnitario > MAX_VALOR then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O valor unitario excede o limite permitido.');
 
   if ArredondarValor(AValorUnitario) <> AValorUnitario then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O valor unitario permite ate duas casas decimais.');
 
   if AValorUnitario = 0 then
@@ -855,14 +829,13 @@ begin
   end;
 
   if Quantidade > Extended(MAX_VALOR) / AValorUnitario then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O subtotal do item excede o limite permitido.');
 
-  Result := ArredondarValor(
-    Quantidade * AValorUnitario);
+  Result := ArredondarValor(Quantidade * AValorUnitario);
 
   if Result > MAX_VALOR then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O subtotal do item excede o limite permitido.');
 end;
 
@@ -881,7 +854,7 @@ begin
       AItens[I].ValorUnitario);
 
     if Result > MAX_VALOR - Subtotal then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'O total da OS excede o limite permitido.');
 
     Result := Result + Subtotal;
@@ -959,8 +932,7 @@ begin
   VerificarConexao;
 
   if FOrdem.ID <= 0 then
-    raise Exception.Create(
-      'Esta OS ainda nao foi salva. ' +
+    raise EOperacaoRecusada.Create('Esta OS ainda nao foi salva. ' +
       'Utilize Descartar para limpar o preenchimento.');
 
   if FConexao.EmTransacao then
@@ -990,6 +962,9 @@ begin
       raise;
     end;
   end;
+
+  TLog.Registrar(llInfo, 'OS.Excluir',
+    'OS_ID=' + IntToStr(FOrdem.ID), 'OS excluida');
 
   Descartar;
 end;
@@ -1183,7 +1158,7 @@ begin
   TotalOutrosItens := FTotal - FSubtotalAntesEdicao;
 
   if TotalOutrosItens > MAX_VALOR - Subtotal then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'O total da OS excede o limite permitido.');
 
   DataSet.FieldByName('DESCRICAO').AsString :=
@@ -1263,14 +1238,14 @@ begin
   end;
 
   if not OrdensIguais(FOrdem, OrdemAtual) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'A OS foi alterada apos o carregamento. ' +
       'Recarregue os dados antes de salvar.');
 
   ItensAtuais := LerItens(FOrdem.ID);
 
   if Length(ItensAtuais) <> Length(FItensOriginais) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'Os itens foram alterados apos o carregamento. ' +
       'Recarregue a OS antes de salvar.');
 
@@ -1280,12 +1255,12 @@ begin
       FItensOriginais, ItensAtuais[I].ID);
 
     if Indice < 0 then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'Os itens foram alterados. Recarregue a OS.');
 
     if not ItensIguais(
       FItensOriginais[Indice], ItensAtuais[I]) then
-      raise Exception.Create(
+      raise EOperacaoRecusada.Create(
         'Os itens foram alterados. Recarregue a OS.');
   end;
 end;
@@ -1364,7 +1339,7 @@ begin
   Status := StatusTexto(ADados.Status);
 
   if not PodeAlterarStatus(ADados.Status) then
-    raise Exception.Create(
+    raise EOperacaoRecusada.Create(
       'A transicao de status informada nao e permitida.');
 
   Result := TEntidade.New.OrdemServico;
@@ -1391,8 +1366,7 @@ begin
     Result.LimparDataFechamento;
 end;
 
-procedure TControllerOrdemServico.Salvar(
-  const ADados: TDadosOrdemServico);
+procedure TControllerOrdemServico.Salvar(const ADados: TDadosOrdemServico);
 var
   OrdemGravacao: iOrdemServico;
   ItensGravacao: TListaItensOS;
@@ -1468,6 +1442,9 @@ begin
       raise;
     end;
   end;
+
+  TLog.Registrar(llInfo, 'OS.Salvar', 'OS_ID=' + IntToStr(OrdemGravacao.ID),
+    'OS e itens gravados', 'itens=' + IntToStr(Length(ItensGravacao)));
 
   Descartar;
 end;

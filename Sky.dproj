@@ -171,6 +171,7 @@
             <Form>FrmImpressaoOS</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="src\Service\Sky.Service.Log.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
