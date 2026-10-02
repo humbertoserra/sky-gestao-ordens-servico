@@ -1,0 +1,10 @@
+2026-10-02 19:27:15.054 | INFO | OS.Salvar | OS_ID=6 | OS e itens gravados | itens=2
+2026-10-02 19:27:58.290 | INFO | Relatorios.btnExportarPDFClick | Exportacao da listagem de ordens de servico | PDF exportado | Arquivo=D:\Desenvolvimento\Projects\Sky\doc\Relatorio_OS.pdf
+2026-10-02 19:28:31.593 | WARN | Relatorios.btnVisualizarClick | Visualizacao de ordens de servico | Data inicial posterior a data final. | Exception=EOperacaoRecusada
+2026-10-02 19:29:12.306 | WARN | Clientes.btnSalvarClick | Gravacao do cliente e atualizacao do formulario | Informe Nome. | Exception=EOperacaoRecusada
+2026-10-02 19:29:48.966 | INFO | OS.Salvar | OS_ID=6 | OS e itens gravados | itens=2
+2026-10-02 19:29:57.549 | WARN | OS.btnSalvarOSClick | Gravacao da OS e dos itens | A OS foi alterada apos o carregamento. Recarregue os dados antes de salvar. | Exception=EOperacaoRecusada
+2026-10-02 19:31:39.135 | INFO | OS.Salvar | OS_ID=7 | OS e itens gravados | itens=1
+2026-10-02 19:31:49.318 | INFO | OS.Salvar | OS_ID=6 | OS e itens gravados | itens=2
+2026-10-02 19:38:29.911 | ERROR | Aoplicacao.OnException | Excecao nao tratada | TESTE CONTROLADO - ERROR | Exception=Exception; origem = TPanel
+2026-10-02 19:43:30.770 | FATAL | Aplicacao.OnException | Excecao nao tratada | TESTE CONTROLADO - FATAL | Exception=EAccessViolation
