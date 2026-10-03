@@ -27,9 +27,7 @@ type
     class function New(const aConexao:iConexao;
                        const aDAOListagem: iDAOCliente;
                        const aDAOCadastro:iDAOCliente): iControllerCliente;
-    procedure Pesquisar(
-      ACampo: TCampoPesquisaCliente;
-      const ATermo: string;
+    procedure Pesquisar(ACampo: TCampoPesquisaCliente; const ATermo: string;
       ASituacao: TSituacaoPesquisaCliente);
     procedure Novo;
     procedure Carregar(const AID: Integer);
@@ -343,11 +341,14 @@ begin
       try
         if FConexao.EmTransacao then
           FConexao.DesfazerTransacao;
-      except
-        on ERollback: Exception do
-          raise Exception.CreateFmt(
-            'Falha ao salvar: %s. Falha ao desfazer: %s.',
-            [E.Message, ERollback.Message]);
+      except on ERollback: Exception do
+        begin
+          TLog.Excecao(llError, 'Clientes.Salvar', 'Falha no rollback',
+            ERollback);
+
+          E.Message := E.Message + sLineBreak +
+            'Falha ao desfazer a transacao: ' + ERollback.Message;
+        end;
       end;
 
       raise;

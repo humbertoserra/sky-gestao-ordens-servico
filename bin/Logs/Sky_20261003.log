@@ -1,0 +1,2 @@
+2026-10-03 16:37:50.867 | INFO | OS.Salvar | OS_ID=6 | OS e itens gravados | itens=2
+2026-10-03 16:38:01.234 | WARN | OS.btnSalvarOSClick | Gravacao da OS e dos itens | A OS foi alterada apos o carregamento. Recarregue os dados antes de salvar. | Exception=EOperacaoRecusada

@@ -10,6 +10,7 @@ type
   private
     FID: Integer;
     FClienteID: Integer;
+    FNomeCliente: string;
     FDataAbertura: TDateTime;
     FDataPrevista: TDateTime;
     FDataFechamento: TDateTime;
@@ -24,6 +25,8 @@ type
     function ID(Value: Integer): iOrdemServico; overload;
     function ClienteID: Integer; overload;
     function ClienteID(Value: Integer): iOrdemServico; overload;
+    function NomeCliente: String; overload;
+    function NomeCliente(Value: string): iOrdemServico; overload;
     function DataAbertura: TDateTime; overload;
     function DataAbertura(Value: TDateTime): iOrdemServico; overload;
     function DataPrevista: TDateTime; overload;
@@ -47,6 +50,17 @@ implementation
 class function TModelEntidadeOrdemServico.New: iOrdemServico;
 begin
   Result := Self.Create;
+end;
+
+function TModelEntidadeOrdemServico.NomeCliente(Value: string): iOrdemServico;
+begin
+  FNomeCliente := Value;
+  Result := Self;
+end;
+
+function TModelEntidadeOrdemServico.NomeCliente: String;
+begin
+  Result := FNomeCliente;
 end;
 
 function TModelEntidadeOrdemServico.ID: Integer;

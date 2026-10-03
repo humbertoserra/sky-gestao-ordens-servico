@@ -50,11 +50,8 @@ type
     function StatusTexto(AStatus: TStatusOrdemServico): string;
     function StatusTipo(const AStatus: string): TStatusOrdemServico;
 
-    procedure AdicionarFiltro(
-      var AFiltros: TFiltros;
-      const ACampo: string;
-      AOperador: TOperadorFiltro;
-      const AValor: Variant);
+    procedure AdicionarFiltro(var AFiltros: TFiltros; const ACampo: string;
+      AOperador: TOperadorFiltro; const AValor: Variant);
 
     function LerOrdem(AConsulta: TDataSet): iOrdemServico;
     function LerItens(const AOrdemID: Integer): TListaItensOS;
@@ -111,8 +108,7 @@ type
     function PodeAlterarStatus(ANovoStatus: TStatusOrdemServico): Boolean;
     procedure NovoItem;
     function DadosItem(const AIndice: Integer): TDadosItemOrdem;
-    procedure AtualizarItem(
-      const AIndice: Integer;
+    procedure AtualizarItem(const AIndice: Integer;
       const ADados: TDadosItemOrdem);
 
     procedure ExcluirItem(const AIndice: Integer);
@@ -352,14 +348,12 @@ begin
   if not (Consulta.State in [dsEdit, dsInsert]) then
     Exit;
 
-  // Uma linha incompleta nao deve bloquear a navegacao.
-  // Enquanto os numeros forem invalidos, conserva o total confirmado.
   try
     Subtotal := CalcularSubtotal(
       Consulta.FieldByName('QUANTIDADE').AsFloat,
       Consulta.FieldByName('VALOR_UNITARIO').AsCurrency);
   except
-    on E: Exception do
+    on E: EOperacaoRecusada do
       Exit;
   end;
 
@@ -432,6 +426,8 @@ begin
   Result.ID(AConsulta.FieldByName('ID').AsInteger);
 
   Result.ClienteID(AConsulta.FieldByName('CLIENTE_ID').AsInteger);
+
+  Result.NomeCliente(AConsulta.FieldByName('CLIENTE_NOME').AsString);
 
   Result.DataAbertura(AConsulta.FieldByName('DATA_ABERTURA').AsDateTime);
 
@@ -667,6 +663,7 @@ function TControllerOrdemServico.Dados: TDadosOrdemServico;
 begin
   Result.ID := 0;
   Result.ClienteID := 0;
+  Result.NomeCliente := '';
   Result.DataAbertura := 0;
   Result.DataPrevista := 0;
   Result.Problema := '';
@@ -680,6 +677,7 @@ begin
 
   Result.ID := FOrdem.ID;
   Result.ClienteID := FOrdem.ClienteID;
+  Result.NomeCliente := FOrdem.NomeCliente;
   Result.DataAbertura := FOrdem.DataAbertura;
   Result.DataPrevista := FOrdem.DataPrevista;
   Result.Problema := FOrdem.Problema;
@@ -759,10 +757,13 @@ begin
         PreencherTabelaItens(Anteriores);
       except
         on ERestauracao: Exception do
-          raise Exception.CreateFmt(
-            'Falha ao atualizar os itens: %s. ' +
-            'Falha ao restaurar os dados anteriores: %s.',
-            [E.Message, ERestauracao.Message]);
+        begin
+          TLog.Excecao(llError, 'OS.AplicarItensMemoria',
+            'Falha na restauracao dos itens', ERestauracao);
+
+          E.Message := E.Message + sLineBreak +
+            'Falha ao restaurar os itens: ' + ERestauracao.Message;
+        end;
       end;
 
       raise;
@@ -936,8 +937,7 @@ begin
       'Utilize Descartar para limpar o preenchimento.');
 
   if FConexao.EmTransacao then
-    raise Exception.Create(
-      'Existe uma transacao em andamento.');
+    raise Exception.Create('Existe uma transacao em andamento.');
 
   FConexao.IniciarTransacao;
   try
@@ -952,21 +952,24 @@ begin
       try
         if FConexao.EmTransacao then
           FConexao.DesfazerTransacao;
-      except
-        on ERollback: Exception do
-          raise Exception.CreateFmt(
-            'Falha ao excluir: %s. Falha ao desfazer: %s.',
-            [E.Message, ERollback.Message]);
+      except on ERollback: Exception do
+        begin
+          TLog.Excecao(llError, 'OS.Excluir', 'Falha no rollback', ERollback);
+
+          E.Message := E.Message + sLineBreak +
+            'Falha ao desfazer a transacao: ' +
+            ERollback.Message;
+        end;
       end;
 
       raise;
     end;
   end;
 
-  TLog.Registrar(llInfo, 'OS.Excluir',
-    'OS_ID=' + IntToStr(FOrdem.ID), 'OS excluida');
+  TLog.Registrar(llInfo, 'OS.Excluir', 'OS_ID=' + IntToStr(FOrdem.ID),
+    'OS excluida');
 
-  Descartar;
+//  Descartar;
 end;
 
 procedure TControllerOrdemServico.ExcluirItem(
@@ -1378,8 +1381,7 @@ begin
   VerificarConexao;
 
   if FConexao.EmTransacao then
-    raise Exception.Create(
-      'Existe uma transacao em andamento.');
+    raise Exception.Create('Existe uma transacao em andamento.');
 
   ItensGravacao := LerItensMemoria;
 
@@ -1416,8 +1418,7 @@ begin
           FItensOriginais, ItensGravacao[I].ID);
 
         if Indice < 0 then
-          raise Exception.Create(
-            'O item nao pertence a OS carregada.');
+          raise Exception.Create('O item nao pertence a OS carregada.');
 
         if not ItensIguais(
           FItensOriginais[Indice], ItensGravacao[I]) then
@@ -1434,9 +1435,12 @@ begin
           FConexao.DesfazerTransacao;
       except
         on ERollback: Exception do
-          raise Exception.CreateFmt(
-            'Falha ao salvar: %s. Falha ao desfazer: %s.',
-            [E.Message, ERollback.Message]);
+        begin
+          TLog.Excecao(llError, 'OS.Salvar', 'Falha no rollback', ERollback);
+
+          E.Message := E.Message + sLineBreak +
+            'Falha ao desfazer a transacao: ' + ERollback.Message;
+        end;
       end;
 
       raise;
@@ -1446,7 +1450,7 @@ begin
   TLog.Registrar(llInfo, 'OS.Salvar', 'OS_ID=' + IntToStr(OrdemGravacao.ID),
     'OS e itens gravados', 'itens=' + IntToStr(Length(ItensGravacao)));
 
-  Descartar;
+//  Descartar;
 end;
 
 procedure TControllerOrdemServico.Descartar;
@@ -1466,7 +1470,8 @@ end;
 procedure TControllerOrdemServico.AtualizarClientes;
 begin
   VerificarConexao;
-  FDAOClientes.BuscarPor([]);
+  FDAOCLientes.Listar;
+  //FDAOClientes.BuscarPor([]);
 end;
 
 procedure TControllerOrdemServico.AtualizarIndicadores;

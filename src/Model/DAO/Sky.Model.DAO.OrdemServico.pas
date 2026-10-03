@@ -16,8 +16,8 @@ type
     TModelDAO, iDAOOrdemServico)
   private
     procedure Validar(const AOrdem: iOrdemServico);
-    procedure PreencherParametros(
-      const AOrdem: iOrdemServico);
+    procedure PreencherParametros(const AOrdem: iOrdemServico);
+    procedure ValidarClienteAtivo(const AClienteID: integer);
   protected
     function SQLConsulta: string; override;
     function ColunaFiltro(
@@ -115,37 +115,53 @@ begin
     False);
 end;
 
+procedure TModelDAOOrdemServico.ValidarClienteAtivo(const AClienteID: integer);
+begin
+  ValidarID(AClienteID);
+  ExigirTransacao;
+
+  FComando.SQL('SELECT ATIVO FROM CLIENTE WHERE ID = :ID WITH LOCK');
+
+  FComando.Parametro('ID', AClienteID);
+
+  try
+    FComando.Abrir;
+
+    if FComando.DataSet.IsEmpty then
+      raise EOperacaoRecusada.Create('Cliente nao encontrado.');
+
+    if FComando.DataSet.FieldByName('ATIVO').AsInteger <> 1 then
+      raise EOperacaoRecusada.Create(
+        'Cliente inativo nao pode receber uma nova OS.');
+  finally
+    FComando.Fechar;
+  end;
+end;
+
 procedure TModelDAOOrdemServico.PreencherParametros(
   const AOrdem: iOrdemServico);
 begin
   FComando.Parametro('CLIENTE_ID', AOrdem.ClienteID);
 
-  FComando.Parametro(
-    'DATA_ABERTURA',
+  FComando.Parametro('DATA_ABERTURA',
     VarFromDateTime(Trunc(AOrdem.DataAbertura)));
 
-  FComando.Parametro(
-    'DATA_PREVISTA',
+  FComando.Parametro('DATA_PREVISTA',
     VarFromDateTime(Trunc(AOrdem.DataPrevista)));
 
   if AOrdem.TemDataFechamento then
-    FComando.Parametro(
-      'DATA_FECHAMENTO',
+    FComando.Parametro('DATA_FECHAMENTO',
       VarFromDateTime(Trunc(AOrdem.DataFechamento)))
   else
-    FComando.ParametroNulo(
-      'DATA_FECHAMENTO', ftDate);
+    FComando.ParametroNulo('DATA_FECHAMENTO', ftDate);
 
   FComando.Parametro('STATUS', AOrdem.Status);
 
-  FComando.Parametro(
-    'DESCRICAO_PROBLEMA', AOrdem.Problema);
+  FComando.Parametro('DESCRICAO_PROBLEMA', AOrdem.Problema);
 
-  FComando.Parametro(
-    'VALOR_TOTAL', AOrdem.ValorTotal);
+  FComando.Parametro('VALOR_TOTAL', AOrdem.ValorTotal);
 
-  FComando.Parametro(
-    'ATIVO', Ord(AOrdem.Ativo));
+  FComando.Parametro('ATIVO', Ord(AOrdem.Ativo));
 end;
 
 procedure TModelDAOOrdemServico.Inserir(
@@ -156,9 +172,9 @@ begin
   Validar(AOrdem);
 
   if AOrdem.ID <> 0 then
-    raise Exception.Create(
-      'Uma inclusao exige OS sem ID.');
+    raise Exception.Create('Uma inclusao exige OS sem ID.');
 
+  ValidarClienteAtivo(AOrdem.ClienteID);
   NovoID := GerarID('GEN_ORDEM_SERVICO_ID');
 
   FComando.SQL(

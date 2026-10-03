@@ -216,6 +216,16 @@ begin
     cbxCliente.Items.IndexOfObject(
       TObject(Dados.ClienteID));
 
+  if not Editavel and
+     (Dados.NomeCliente <> '') and
+     (cbxCliente.ItemIndex < 0) then
+  begin
+    cbxCliente.Style := csDropDown;
+    cbxCliente.Text := Dados.NomeCliente;
+  end
+  else
+    cbxCliente.Style := csDropDownList;
+
   editProblema.Text := Dados.Problema;
 
   if TemOrdem then
@@ -569,6 +579,7 @@ begin
   end;
 
   try
+    FController.Descartar;
     ExibirOrdem;
 
     if btnNovaOS.CanFocus then
@@ -1309,6 +1320,7 @@ begin
   end;
 
   try
+    FCOntroller.Descartar;
     ExibirOrdem;
 
     if btnNovaOS.CanFocus then

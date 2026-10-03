@@ -8,3 +8,13 @@
 2026-10-02 19:31:49.318 | INFO | OS.Salvar | OS_ID=6 | OS e itens gravados | itens=2
 2026-10-02 19:38:29.911 | ERROR | Aoplicacao.OnException | Excecao nao tratada | TESTE CONTROLADO - ERROR | Exception=Exception; origem = TPanel
 2026-10-02 19:43:30.770 | FATAL | Aplicacao.OnException | Excecao nao tratada | TESTE CONTROLADO - FATAL | Exception=EAccessViolation
+2026-10-02 20:17:14.681 | INFO | Cliente.Salvar | CLIENTE_ID=3 | Cliente Gravado | 
+2026-10-02 20:17:42.965 | WARN | OS.btnSalvarOSClick | Gravacao da OS e dos itens | Cliente inativo nao pode receber uma nova OS. | Exception=EOperacaoRecusada
+2026-10-02 20:30:54.180 | INFO | Cliente.Salvar | CLIENTE_ID=3 | Cliente Gravado | 
+2026-10-02 20:31:07.424 | INFO | OS.Salvar | OS_ID=7 | OS e itens gravados | itens=1
+2026-10-02 20:31:16.997 | WARN | Clientes.btnSalvarClick | Gravacao do cliente e atualizacao do formulario | Cliente possui OS ativa aberta ou em andamento. | Exception=EOperacaoRecusada
+2026-10-02 20:31:25.636 | WARN | Clientes.btnSalvarClick | Gravacao do cliente e atualizacao do formulario | Cliente possui OS ativa aberta ou em andamento. | Exception=EOperacaoRecusada
+2026-10-02 20:31:27.861 | WARN | Clientes.btnSalvarClick | Gravacao do cliente e atualizacao do formulario | Cliente possui OS ativa aberta ou em andamento. | Exception=EOperacaoRecusada
+2026-10-02 20:31:58.685 | INFO | OS.Salvar | OS_ID=7 | OS e itens gravados | itens=1
+2026-10-02 20:32:06.676 | INFO | OS.Salvar | OS_ID=7 | OS e itens gravados | itens=1
+2026-10-02 20:32:19.727 | INFO | Cliente.Salvar | CLIENTE_ID=3 | Cliente Gravado | 

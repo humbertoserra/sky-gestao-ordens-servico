@@ -15,15 +15,13 @@ type
     FConexao: iConexao;
     FConsulta: iQuery;
 
-    function PrepararValor(
-      const AFiltro: TFiltro): Variant;
+    function PrepararValor( const AFiltro: TFiltro): Variant;
   protected
     FComando: iQuery;
 
     function SQLConsulta: string; virtual; abstract;
 
-    function ColunaFiltro(
-      const ACampo: string;
+    function ColunaFiltro(const ACampo: string;
       out ATexto: Boolean): string; virtual; abstract;
 
     function MapearCampo(

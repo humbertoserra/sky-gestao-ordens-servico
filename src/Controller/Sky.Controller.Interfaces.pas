@@ -57,6 +57,7 @@ type
   TDadosOrdemServico = record
     ID: Integer;
     ClienteID: Integer;
+    NomeCliente: String;
     DataAbertura: TDateTime;
     DataPrevista: TDateTime;
     Problema: string;

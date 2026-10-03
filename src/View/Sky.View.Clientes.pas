@@ -156,14 +156,6 @@ begin
     Dados.Ativo := checkAtivo.Checked;
 
     FController.Salvar(Dados);
-
-    { Guarda o ID confirmado antes de limpar o cadastro. }
-    Dados := FController.Dados;
-    FUltimoClienteSalvoID := Dados.ID;
-
-    FController.Limpar;
-    ExibirCliente;
-    ActiveControl := gridClientes;
   except
     on E: Exception do
     begin
@@ -176,6 +168,12 @@ begin
   end;
 
   try
+    Dados := FController.Dados;
+    FUltimoClienteSalvoID := Dados.ID;
+
+    FController.Limpar;
+    ExibirCliente;
+    ActiveControl := gridClientes;
     Pesquisar;
   except
     on E: Exception do

@@ -259,7 +259,7 @@ object FrmPrincipal: TFrmPrincipal
           Top = 31
           Width = 80
           Height = 25
-          Caption = 'Clien&te...'
+          Caption = 'Clien&te'
           TabOrder = 1
           OnClick = btnNovoClienteClick
         end
@@ -268,7 +268,7 @@ object FrmPrincipal: TFrmPrincipal
         Left = 11
         Top = 135
         Width = 414
-        Height = 70
+        Height = 63
         Padding.Left = 8
         Padding.Right = 8
         TabOrder = 2

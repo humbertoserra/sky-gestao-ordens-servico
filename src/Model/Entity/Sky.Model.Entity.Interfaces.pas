@@ -25,6 +25,8 @@ type
     function ID(Value: integer): iOrdemServico; overload;
     function ClienteID: integer; overload;
     function ClienteID(Value: integer): iOrdemServico; overload;
+    function NomeCliente: String; overload;
+    function NomeCliente(Value: string): iOrdemServico; overload;
     function DataAbertura: TDateTime; overload;
     function DataAbertura(Value: TDateTime): iOrdemServico; overload;
     function DataPrevista: TDateTime; overload;
